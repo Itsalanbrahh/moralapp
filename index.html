@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#131f24" />
+    <meta name="theme-color" content="#0a0a1a" />
 
     <!-- iOS / iPad PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -27,7 +27,9 @@
         theme: {
           extend: {
             colors: {
-              night: { 900: '#131f24', 800: '#1a2e35', 700: '#2b3f48' },
+              night: { 900: '#0a0a1a', 800: '#16162e', 700: '#1e1e3a' },
+              primary: { DEFAULT: '#7c5aff', light: '#a78bfa' },
+              accent: { green: '#00e676', blue: '#1cb0f6', orange: '#ff9600', pink: '#ff6b9d' },
             },
             fontFamily: {
               display: ['"Baloo 2"', 'cursive'],
@@ -39,11 +41,11 @@
     </script>
 
     <style>
-      html, body { margin: 0; padding: 0; background: #131f24; overflow: hidden; height: 100%; height: -webkit-fill-available; }
+      html, body { margin: 0; padding: 0; background: #0a0a1a; overflow: hidden; height: 100%; height: -webkit-fill-available; }
       #root { height: 100%; height: -webkit-fill-available; }
     </style>
   </head>
-  <body class="bg-night-900 text-white font-body overflow-hidden">
+  <body class="text-white font-body overflow-hidden" style="background: #0a0a1a;">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

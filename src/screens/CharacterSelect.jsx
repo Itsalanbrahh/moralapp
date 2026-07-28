@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { characters } from '../data/characters'
 import { speak } from '../utils/voice'
+import GlassCard, { GlassButton, GlassInput } from '../components/GlassCard'
 
 export default function CharacterSelect({ navigate }) {
   const [step, setStep] = useState('name')
@@ -32,11 +33,18 @@ export default function CharacterSelect({ navigate }) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col" style={{ background: '#131f24' }}>
+    <div className="w-full h-full flex flex-col" style={{ background: '#0a0a1a' }}>
       {/* Progress bar */}
       <div className="px-5 pt-4">
-        <div className="h-4 rounded-full overflow-hidden" style={{ background: '#2b3f48' }}>
-          <motion.div className="h-full rounded-full" style={{ background: '#58cc02' }}
+        <div style={{
+          height: '10px', borderRadius: '5px', overflow: 'hidden',
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <motion.div style={{
+            height: '100%', borderRadius: '5px',
+            background: 'linear-gradient(90deg, #7c5aff, #a78bfa)',
+            boxShadow: '0 0 8px rgba(124,90,255,0.3)',
+          }}
             animate={{ width: step === 'name' ? '50%' : '100%' }} />
         </div>
       </div>
@@ -53,49 +61,43 @@ export default function CharacterSelect({ navigate }) {
             >
               <motion.div
                 className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4"
-                style={{ background: '#58cc02', border: '3px solid #46a302' }}
+                style={{
+                  border: '3px solid rgba(124,90,255,0.3)',
+                  boxShadow: '0 8px 24px rgba(124,90,255,0.2)',
+                }}
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <img src="/assets/characters/owl.png" alt="Owl" className="w-full h-full object-cover" />
               </motion.div>
 
-              <div className="relative bg-white rounded-2xl p-5 mb-8 w-full"
-                style={{ borderBottom: '4px solid #e5e5e5' }}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
-                  style={{ borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '12px solid white' }} />
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.25rem', textAlign: 'center', color: '#3c3c3c' }}>
+              <GlassCard style={{ padding: '1.25rem', marginBottom: '2rem', textAlign: 'center' }}>
+                <p style={{
+                  fontFamily: "'Baloo 2', cursive", fontWeight: 700,
+                  fontSize: '1.25rem', color: 'rgba(255,255,255,0.9)',
+                }}>
                   Hi there! What's your name?
                 </p>
-              </div>
+              </GlassCard>
 
-              <input
+              <GlassInput
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
                 placeholder="Type your name..."
-                style={{
-                  width: '100%', background: 'white', borderRadius: '1rem', padding: '1rem 1.25rem',
-                  fontSize: '1.1rem', textAlign: 'center', fontWeight: 700, color: '#3c3c3c',
-                  border: '2px solid #e5e5e5', borderBottom: '4px solid #e5e5e5', outline: 'none',
-                }}
                 autoFocus
                 maxLength={20}
+                style={{ textAlign: 'center', marginBottom: '1.5rem' }}
               />
 
-              <button
+              <GlassButton
+                variant="primary"
                 onClick={handleNameSubmit}
                 disabled={name.trim().length === 0}
-                className="w-full rounded-2xl text-white font-bold uppercase mt-6 disabled:opacity-40"
-                style={{
-                  fontFamily: "'Baloo 2', cursive", fontSize: '1.1rem', padding: '1rem',
-                  background: '#58cc02', border: 'none', borderBottom: '5px solid #46a302',
-                  boxShadow: '0 6px 0 #3d8b02', cursor: 'pointer',
-                }}
               >
                 Continue
-              </button>
+              </GlassButton>
             </motion.div>
           ) : (
             <motion.div
@@ -107,21 +109,24 @@ export default function CharacterSelect({ navigate }) {
             >
               <motion.div
                 className="w-14 h-14 rounded-full overflow-hidden mx-auto mb-3"
-                style={{ background: '#58cc02', border: '2px solid #46a302' }}
+                style={{
+                  border: '2px solid rgba(124,90,255,0.3)',
+                  boxShadow: '0 6px 16px rgba(124,90,255,0.15)',
+                }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <img src="/assets/characters/owl.png" alt="Owl" className="w-full h-full object-cover" />
               </motion.div>
 
-              <div className="relative bg-white rounded-2xl p-4 mb-6 w-full"
-                style={{ borderBottom: '4px solid #e5e5e5' }}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
-                  style={{ borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '12px solid white' }} />
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', color: '#3c3c3c' }}>
+              <GlassCard style={{ padding: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                <p style={{
+                  fontFamily: "'Baloo 2', cursive", fontWeight: 700,
+                  fontSize: '1.1rem', color: 'rgba(255,255,255,0.9)',
+                }}>
                   {name}, pick your buddy!
                 </p>
-              </div>
+              </GlassCard>
 
               {/* Character cards */}
               <div className="flex gap-3 mb-6 w-full justify-center">
@@ -135,18 +140,22 @@ export default function CharacterSelect({ navigate }) {
                     className="flex flex-col items-center p-3 rounded-2xl transition-all"
                     style={{
                       width: '5.5rem',
-                      background: selected === char.id ? '#e8ffe0' : 'white',
-                      border: `2px solid ${selected === char.id ? '#58cc02' : '#e5e5e5'}`,
-                      borderBottom: `4px solid ${selected === char.id ? '#46a302' : '#e5e5e5'}`,
-                      boxShadow: selected === char.id ? '0 0 12px rgba(88,204,2,0.3)' : 'none',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      background: selected === char.id ? `${char.color}18` : 'rgba(255,255,255,0.05)',
+                      border: `2px solid ${selected === char.id ? `${char.color}60` : 'rgba(255,255,255,0.08)'}`,
+                      boxShadow: selected === char.id ? `0 4px 20px ${char.color}20` : 'none',
                     }}
                   >
                     <div className="w-14 h-14 rounded-xl overflow-hidden mb-1.5"
-                      style={{ background: char.color, border: '2px solid rgba(255,255,255,0.2)' }}>
+                      style={{
+                        border: `2px solid ${char.color}40`,
+                        boxShadow: `0 4px 12px ${char.color}15`,
+                      }}>
                       <img src={char.image} alt={char.name} className="w-full h-full object-cover" />
                     </div>
-                    <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: '#3c3c3c' }}>{char.name}</span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: '#afafaf' }}>{char.title}</span>
+                    <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)' }}>{char.name}</span>
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{char.title}</span>
                   </motion.button>
                 ))}
               </div>
@@ -155,29 +164,22 @@ export default function CharacterSelect({ navigate }) {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative bg-white rounded-2xl p-4 mb-6 w-full"
-                  style={{ borderBottom: '4px solid #e5e5e5' }}
                 >
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0"
-                    style={{ borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '12px solid white' }} />
-                  <p style={{ fontFamily: "'Nunito', sans-serif", color: '#3c3c3c', textAlign: 'center', fontStyle: 'italic' }}>
-                    "{characters[selected].greeting}"
-                  </p>
+                  <GlassCard style={{ padding: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
+                      "{characters[selected].greeting}"
+                    </p>
+                  </GlassCard>
                 </motion.div>
               )}
 
-              <button
+              <GlassButton
+                variant="primary"
                 onClick={handleConfirm}
                 disabled={!selected}
-                className="w-full rounded-2xl text-white font-bold uppercase disabled:opacity-40"
-                style={{
-                  fontFamily: "'Baloo 2', cursive", fontSize: '1.05rem', padding: '1rem',
-                  background: '#58cc02', border: 'none', borderBottom: '5px solid #46a302',
-                  boxShadow: '0 6px 0 #3d8b02', cursor: 'pointer',
-                }}
               >
                 {selected ? `Let's go with ${characters[selected].name}!` : 'Pick a buddy first'}
-              </button>
+              </GlassButton>
             </motion.div>
           )}
         </AnimatePresence>
