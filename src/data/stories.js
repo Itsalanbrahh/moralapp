@@ -77,6 +77,43 @@ export const stories = {
         questionType: 'open',
       },
     ],
+    // Comprehension questions for advanced readers (asked after reading the whole story)
+    comprehension: [
+      {
+        question: 'Why did Whisperwood grow cold and shadowy?',
+        options: ['Its three magical lights went dark', 'It started snowing', 'The animals moved away'],
+        answer: 0,
+        hint: 'Think about what went missing at the very start.',
+      },
+      {
+        question: 'How did Kael get the Sunstone from the grumble-bear?',
+        options: ['He fought the bear', 'He asked politely and honestly', 'He took it while it slept'],
+        answer: 1,
+        hint: 'Courage in this story means being honest, not loud.',
+      },
+      {
+        question: 'What made the Kindleaf appear for Mira?',
+        options: ['She sang a song', 'She helped an ant cross the stream', 'She flew very fast'],
+        answer: 1,
+        hint: '"The Kindleaf grows where kindness is planted."',
+      },
+      {
+        question: 'What was the answer to the turtle’s riddle?',
+        options: ['A tree', 'A mountain', 'A cloud'],
+        answer: 1,
+        hint: 'Roots nobody sees, taller than trees, reaching the sky.',
+      },
+      {
+        question: 'What is the main lesson of the story?',
+        options: [
+          'Courage, kindness and wisdom are stronger together',
+          'Always travel alone',
+          'Lights are hard to find',
+        ],
+        answer: 0,
+        hint: 'Think about what happened when the friends combined their lights.',
+      },
+    ],
   },
 }
 

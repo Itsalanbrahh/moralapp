@@ -11,11 +11,17 @@ import {
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
+const READING_LEVELS = [
+  { id: 'listen', title: 'Listen', Icon: VoiceOnIcon, color: '#3B82F6' },
+  { id: 'beginner', title: 'Read-Along', Icon: BookIcon, color: '#10B981' },
+  { id: 'advanced', title: 'Reading Pro', Icon: TrophyIcon, color: '#8B5CF6' },
+]
+
 export default function ProfileScreen({ navigate }) {
   const {
     childName, selectedCharacter, level, xp, stars, badges,
     voiceEnabled, setVoiceEnabled, speechRate, setSpeechRate, resetProgress,
-    totalStoriesRead, totalMissionsCompleted, gear,
+    readingLevel, setReadingLevel,
   } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const { logout, isGuest, parentEmail } = useAuthStore()
@@ -127,6 +133,28 @@ export default function ProfileScreen({ navigate }) {
           <h3 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700, color: '#4A5568', margin: '0 0 0.75rem' }}>
             Settings
           </h3>
+
+          {/* Reading level */}
+          <div style={{ padding: '0.25rem 0 0.65rem', borderBottom: '1px solid rgba(0,0,0,0.04)', marginBottom: '0.25rem' }}>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Reading Level</span>
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+              {READING_LEVELS.map((lvl) => {
+                const active = readingLevel === lvl.id
+                return (
+                  <motion.button key={lvl.id} onClick={() => setReadingLevel(lvl.id)} whileTap={{ scale: 0.96 }}
+                    style={{
+                      flex: 1, borderRadius: '12px', padding: '0.5rem 0.25rem', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                      background: active ? `${lvl.color}15` : 'rgba(0,0,0,0.03)',
+                      border: active ? `1.5px solid ${lvl.color}` : '1px solid rgba(0,0,0,0.05)',
+                    }}>
+                    <lvl.Icon size={16} color={active ? lvl.color : '#9CA3AF'} />
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: active ? lvl.color : '#9CA3AF' }}>{lvl.title}</span>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </div>
 
           {/* Voice toggle */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>

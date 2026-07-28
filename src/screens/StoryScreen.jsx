@@ -2,10 +2,16 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getAllStories } from '../data/stories'
-import { BackArrowIcon, StarIcon, CheckIcon, SparkleIcon, ChevronRightIcon, BookIcon } from '../components/SVGIcons'
+import { BackArrowIcon, CheckIcon, SparkleIcon, ChevronRightIcon, BookIcon, VoiceOnIcon, TrophyIcon } from '../components/SVGIcons'
+
+const READING_LEVELS = [
+  { id: 'listen', title: 'Listen', subtitle: "I'm not reading yet", Icon: VoiceOnIcon, color: '#3B82F6' },
+  { id: 'beginner', title: 'Read-Along', subtitle: 'Learning to read', Icon: BookIcon, color: '#10B981' },
+  { id: 'advanced', title: 'Reading Pro', subtitle: 'Test my comprehension', Icon: TrophyIcon, color: '#8B5CF6' },
+]
 
 export default function StoryScreen({ navigate }) {
-  const { completedStories, selectedCharacter } = useGameStore()
+  const { completedStories, selectedCharacter, readingLevel, setReadingLevel } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const stories = getAllStories()
 
@@ -51,6 +57,33 @@ export default function StoryScreen({ navigate }) {
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#4A5568' }}>
               Pick a story to read with your buddy!
             </p>
+          </div>
+        </motion.div>
+
+        {/* Reading level selector */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ marginBottom: '1rem' }}>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem', paddingLeft: '2px' }}>
+            Reading Level
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {READING_LEVELS.map((lvl) => {
+              const active = readingLevel === lvl.id
+              return (
+                <motion.button key={lvl.id} onClick={() => setReadingLevel(lvl.id)} whileTap={{ scale: 0.96 }}
+                  style={{
+                    flex: 1, borderRadius: '18px', padding: '0.75rem 0.5rem', cursor: 'pointer', textAlign: 'center',
+                    background: active ? `linear-gradient(160deg, ${lvl.color}, ${lvl.color}cc)` : 'white',
+                    border: active ? 'none' : '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: active ? `0 6px 18px ${lvl.color}44` : '0 2px 8px rgba(0,0,0,0.05)',
+                  }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '11px', margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : `${lvl.color}15` }}>
+                    <lvl.Icon size={17} color={active ? 'white' : lvl.color} />
+                  </div>
+                  <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.82rem', color: active ? 'white' : '#1F2937', margin: 0, lineHeight: 1.1 }}>{lvl.title}</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.58rem', fontWeight: 600, color: active ? 'rgba(255,255,255,0.85)' : '#9CA3AF', margin: '2px 0 0', lineHeight: 1.2 }}>{lvl.subtitle}</p>
+                </motion.button>
+              )
+            })}
           </div>
         </motion.div>
 

@@ -1,408 +1,384 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getStory } from '../data/stories'
-import { speak, stopSpeaking, listen, isSpeechSupported } from '../utils/voice'
-import { CloseIcon, MicIcon, BackArrowIcon, BoltIcon, CheckIcon, StarIcon, HeartIcon, ShieldIcon, BookIcon, PlayIcon, PauseIcon, BoxIcon, RefreshIcon, MenuDotsIcon, SpeedIcon } from '../components/SVGIcons'
+import { speak, stopSpeaking } from '../utils/voice'
+import { CloseIcon, BackArrowIcon, BoltIcon, CheckIcon, StarIcon, PlayIcon, PauseIcon, RefreshIcon, VoiceOnIcon, BookIcon, TrophyIcon } from '../components/SVGIcons'
 
-const characterCards = [
-  { name: 'Kael', tag: 'courage', tagIcon: 'shield', color: '#10B981' },
-  { name: 'Mira', tag: 'kindness', tagIcon: 'heart', color: '#EC4899' },
-  { name: 'Pip', tag: 'wisdom', tagIcon: 'book', color: '#8B5CF6' },
-]
+const READING = {
+  listen: { label: 'Listening', color: '#3B82F6', Icon: VoiceOnIcon },
+  beginner: { label: 'Read-Along', color: '#10B981', Icon: BookIcon },
+  advanced: { label: 'Reading Pro', color: '#8B5CF6', Icon: TrophyIcon },
+}
 
-function TagIcon({ type, size = 12 }) {
-  switch(type) {
-    case 'shield': return <ShieldIcon size={size} color="white" />
-    case 'heart': return <HeartIcon size={size} color="white" />
-    case 'book': return <BookIcon size={size} color="white" />
-    default: return <StarIcon size={size} color="white" />
-  }
+// Split text into word / whitespace tokens, tagging each word with its order and
+// character range (used to sync the read-along highlight to speech boundaries).
+function tokenize(text) {
+  const parts = (text || '').split(/(\s+)/)
+  let ci = 0, order = -1
+  return parts.map((p) => {
+    const startChar = ci
+    ci += p.length
+    const isWord = /\S/.test(p)
+    if (isWord) order++
+    return { text: p, isWord, order: isWord ? order : -1, startChar, endChar: ci }
+  })
 }
 
 export default function StorybookScreen({ navigate, params }) {
-  const { selectedCharacter, childName, completeStory, addXP } = useGameStore()
+  const { selectedCharacter, childName, completeStory, addXP, readingLevel, voiceEnabled, speechRate } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const story = getStory(params.storyId)
+  const mode = READING[readingLevel] ? readingLevel : 'listen'
 
   const [sceneIndex, setSceneIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [showQuestion, setShowQuestion] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [showReaction, setShowReaction] = useState(false)
-  const [reactionText, setReactionText] = useState('')
-  const [selectedChoice, setSelectedChoice] = useState(null)
+  const [spokenWord, setSpokenWord] = useState(-1)
   const [isDone, setIsDone] = useState(false)
-  const [displayedText, setDisplayedText] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [audioProgress, setAudioProgress] = useState(30)
-  const typingRef = useRef(null)
+  const [phase, setPhase] = useState('story') // 'story' | 'quiz'
+
+  // quiz state (advanced)
+  const [qIdx, setQIdx] = useState(0)
+  const [selected, setSelected] = useState(null)
+  const [correctCount, setCorrectCount] = useState(0)
+  const [showHint, setShowHint] = useState(false)
+
+  const timerRef = useRef(null)
+  const useBoundaryRef = useRef(false)
 
   const scene = story?.scenes[sceneIndex]
-  const progress = ((sceneIndex + 1) / story?.scenes.length) * 100
+  const tokens = useMemo(() => tokenize(scene?.text), [scene])
+  const wordCount = useMemo(() => tokens.filter((t) => t.isWord).length, [tokens])
+  const quiz = story?.comprehension || []
 
+  const effRate = mode === 'beginner' ? Math.min(speechRate, 0.85) : speechRate
+
+  // Narrate the current scene (and drive read-along highlight for beginners)
+  const narrate = useCallback(() => {
+    if (!scene) return
+    clearTimeout(timerRef.current)
+    stopSpeaking()
+    setSpokenWord(-1)
+    useBoundaryRef.current = false
+
+    const words = tokens.filter((t) => t.isWord)
+
+    // timer fallback so the highlight works even without speech-boundary events
+    const startTimer = () => {
+      let i = 0
+      const step = () => {
+        if (useBoundaryRef.current) return
+        setSpokenWord(i)
+        const w = words[i]
+        i++
+        if (i <= words.length) {
+          const ms = Math.min(520, Math.max(200, 210 + (w?.text.length || 3) * 28)) / effRate
+          timerRef.current = setTimeout(step, ms)
+        }
+      }
+      timerRef.current = setTimeout(step, 350)
+    }
+
+    if (mode === 'beginner') startTimer()
+
+    if (!voiceEnabled) { setIsPlaying(false); return }
+
+    setIsPlaying(true)
+    speak(scene.text, {
+      rate: effRate,
+      pitch: character.voicePitch,
+      onBoundary: mode === 'beginner' ? (e) => {
+        useBoundaryRef.current = true
+        clearTimeout(timerRef.current)
+        const tk = tokens.find((t) => e.charIndex >= t.startChar && e.charIndex < t.endChar)
+        if (tk) setSpokenWord(tk.isWord ? tk.order : Math.min(wordCount - 1, (tk.order < 0 ? 0 : tk.order) + 1))
+      } : undefined,
+    }).then(() => {
+      setIsPlaying(false)
+      setSpokenWord(wordCount)
+    })
+  }, [scene, tokens, wordCount, mode, voiceEnabled, effRate, character.voicePitch])
+
+  // Auto-narrate on scene change for listen & beginner (advanced reads silently)
   useEffect(() => {
-    if (!scene?.text) return
-    setDisplayedText('')
-    setIsTyping(true)
-    let i = 0
-    const text = scene.text
-    clearInterval(typingRef.current)
-    typingRef.current = setInterval(() => {
-      i++
-      setDisplayedText(text.slice(0, i))
-      if (i >= text.length) { clearInterval(typingRef.current); setIsTyping(false) }
-    }, 22)
-    return () => clearInterval(typingRef.current)
-  }, [sceneIndex, scene?.text])
+    if (isDone || phase !== 'story' || !scene) return
+    if (mode === 'advanced') { setSpokenWord(-1); return }
+    const t = setTimeout(narrate, 350)
+    return () => { clearTimeout(t); clearTimeout(timerRef.current); stopSpeaking() }
+  }, [sceneIndex, phase, isDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!scene || isDone) return
-    const timer = setTimeout(() => {
-      setIsPlaying(true)
-      speak(scene.narration || scene.text, { pitch: character.voicePitch, rate: character.voiceRate })
-        .then(() => {
-          setIsPlaying(false)
-          if (scene.pauseAfter && scene.question) setShowQuestion(true)
-        })
-    }, 600)
-    return () => { clearTimeout(timer); stopSpeaking() }
-  }, [sceneIndex, isDone])
+  const speakWord = (raw) => {
+    const w = raw.replace(/[^A-Za-z'’-]/g, '')
+    if (w) speak(w, { rate: 0.7, pitch: character.voicePitch })
+  }
 
-  const handleAnswer = (answer) => {
-    setShowQuestion(false)
-    setReactionText(getReaction(answer, character.id))
-    setShowReaction(true)
-    addXP(10)
-    setTimeout(() => {
-      setShowReaction(false)
-      setSelectedChoice(null)
-      advanceOrFinish()
-    }, 2200)
+  const togglePlay = () => {
+    if (isPlaying) { stopSpeaking(); clearTimeout(timerRef.current); setIsPlaying(false) }
+    else narrate()
+  }
+
+  const finish = () => {
+    stopSpeaking()
+    setIsDone(true)
+    completeStory(story.id)
   }
 
   const advanceOrFinish = () => {
-    if (sceneIndex < story.scenes.length - 1) {
-      setSceneIndex(sceneIndex + 1)
-    } else {
-      setIsDone(true)
-      completeStory(story.id)
-    }
+    stopSpeaking()
+    clearTimeout(timerRef.current)
+    if (sceneIndex < story.scenes.length - 1) setSceneIndex((s) => s + 1)
+    else if (mode === 'advanced' && quiz.length) setPhase('quiz')
+    else finish()
   }
 
-  const handleSkip = () => {
-    stopSpeaking()
-    if (showQuestion) handleAnswer('(skipped)')
-    else if (isTyping) { clearInterval(typingRef.current); setDisplayedText(scene.text); setIsTyping(false) }
-    else advanceOrFinish()
+  const answerQuiz = (i) => {
+    if (selected !== null) return
+    setSelected(i)
+    const correct = i === quiz[qIdx].answer
+    if (correct) setCorrectCount((c) => c + 1)
+    setTimeout(() => {
+      if (qIdx < quiz.length - 1) { setQIdx((q) => q + 1); setSelected(null); setShowHint(false) }
+      else { if (correctCount + (correct ? 1 : 0) >= 0) addXP((correctCount + (correct ? 1 : 0)) * 10); finish() }
+    }, 1400)
   }
 
   if (!story) return <div style={{ padding: '2rem', textAlign: 'center', color: 'white', fontFamily: "'Baloo 2', cursive" }}>Story not found</div>
 
-  // Victory screen
+  const rc = READING[mode]
+
+  // ---------- Victory ----------
   if (isDone) {
+    const isQuiz = mode === 'advanced' && quiz.length
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center px-6"
-        style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1E1B4B 100%)' }}>
+      <div className="w-full h-full flex flex-col items-center justify-center px-6" style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1E1B4B 100%)' }}>
         {[...Array(12)].map((_, i) => (
           <motion.div key={i} className="absolute rounded-full"
-            style={{
-              width: 6 + Math.random() * 8, height: 6 + Math.random() * 8,
-              background: ['#8B5CF6', '#FBBF24', '#3B82F6', '#EC4899', '#F59E0B', '#10B981'][i % 6],
-              left: `${10 + Math.random() * 80}%`, top: `${20 + Math.random() * 40}%`,
-            }}
-            animate={{ y: [0, -20 - Math.random() * 30], opacity: [1, 0], rotate: [0, 360] }}
-            transition={{ duration: 1.5 + Math.random(), delay: i * 0.08, repeat: Infinity, repeatDelay: 1 }}
-          />
+            style={{ width: 6 + (i % 4) * 3, height: 6 + (i % 4) * 3, background: ['#8B5CF6', '#FBBF24', '#3B82F6', '#EC4899', '#F59E0B', '#10B981'][i % 6], left: `${10 + (i * 7) % 80}%`, top: `${20 + (i * 5) % 40}%` }}
+            animate={{ y: [0, -35], opacity: [1, 0], rotate: [0, 360] }} transition={{ duration: 1.6, delay: i * 0.08, repeat: Infinity, repeatDelay: 1 }} />
         ))}
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-center relative z-10">
-          <motion.div animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }} transition={{ duration: 0.6, repeat: 2 }}>
-            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'linear-gradient(145deg, #8B5CF6, #7C3AED)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)' }}>
-              <StarIcon size={40} color="#FBBF24" />
-            </div>
-          </motion.div>
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(145deg, #8B5CF6, #7C3AED)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)' }}>
+            {isQuiz ? <TrophyIcon size={40} color="#FBBF24" /> : <StarIcon size={40} color="#FBBF24" />}
+          </div>
           <h2 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.8rem', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>STORY COMPLETE!</h2>
-          <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: "'Nunito', sans-serif" }}>
-            Great listening, {childName}!
-          </p>
+          {isQuiz ? (
+            <p style={{ marginBottom: '1.25rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: "'Nunito', sans-serif" }}>
+              You answered <span style={{ color: '#A78BFA', fontWeight: 800 }}>{correctCount} / {quiz.length}</span> right, {childName}!
+            </p>
+          ) : (
+            <p style={{ marginBottom: '1.25rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: "'Nunito', sans-serif" }}>
+              {mode === 'listen' ? `Great listening, ${childName}!` : `Great reading, ${childName}!`}
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '2rem' }}>
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
-              style={{ borderRadius: '20px', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '80px',
-                backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ borderRadius: '20px', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '80px', backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,92,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
                 <BoltIcon size={18} color="#A78BFA" />
               </div>
-              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.25rem', fontWeight: 700, color: '#A78BFA' }}>+50</span>
+              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.25rem', fontWeight: 700, color: '#A78BFA' }}>+{50 + (isQuiz ? correctCount * 10 : 0)}</span>
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', fontFamily: "'Nunito', sans-serif" }}>XP</span>
-            </motion.div>
+            </div>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('home')} style={{ maxWidth: '300px' }}>
-            CONTINUE
-          </button>
+          <button className="btn btn-primary" onClick={() => navigate('home')} style={{ maxWidth: '300px' }}>CONTINUE</button>
         </motion.div>
       </div>
     )
   }
 
+  // ---------- Comprehension quiz (advanced) ----------
+  if (phase === 'quiz') {
+    const q = quiz[qIdx]
+    return (
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A' }}>
+        <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <motion.button onClick={() => navigate('story')} whileTap={{ scale: 0.9 }}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
+            <BackArrowIcon size={16} color="rgba(255,255,255,0.7)" />
+          </motion.button>
+          <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: 'white', margin: 0, flex: 1 }}>Comprehension Quiz</p>
+          <div style={{ padding: '3px 10px', borderRadius: '9999px', background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.3)' }}>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: '#A78BFA' }}>{qIdx + 1} / {quiz.length}</span>
+          </div>
+        </div>
+
+        {/* progress */}
+        <div style={{ padding: '0 1rem', flexShrink: 0 }}>
+          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <motion.div animate={{ width: `${((qIdx + (selected !== null ? 1 : 0)) / quiz.length) * 100}%` }} style={{ height: '100%', background: 'linear-gradient(90deg,#8B5CF6,#A78BFA)' }} />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto" style={{ padding: '1.25rem 1rem' }}>
+          <motion.div key={qIdx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '1.1rem', marginBottom: '1rem' }}>
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.15rem', fontWeight: 700, color: 'white', margin: 0, lineHeight: 1.4 }}>{q.question}</p>
+          </motion.div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {q.options.map((opt, i) => {
+              const isPicked = selected === i
+              const isAnswer = i === q.answer
+              const reveal = selected !== null
+              let bg = 'rgba(255,255,255,0.06)', border = 'rgba(255,255,255,0.1)'
+              if (reveal && isAnswer) { bg = 'rgba(16,185,129,0.18)'; border = 'rgba(16,185,129,0.5)' }
+              else if (reveal && isPicked) { bg = 'rgba(239,68,68,0.16)'; border = 'rgba(239,68,68,0.5)' }
+              return (
+                <motion.button key={i} onClick={() => answerQuiz(i)} disabled={reveal} whileTap={reveal ? {} : { scale: 0.98 }}
+                  initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0.85rem 1rem', borderRadius: '16px', background: bg, border: `1px solid ${border}`, cursor: reveal ? 'default' : 'pointer', textAlign: 'left', width: '100%' }}>
+                  <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#A78BFA', width: 16 }}>{['A', 'B', 'C', 'D'][i]}</span>
+                  <span style={{ flex: 1, fontFamily: "'Nunito', sans-serif", fontSize: '0.95rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{opt}</span>
+                  {reveal && isAnswer && <CheckIcon size={16} color="#10B981" />}
+                  {reveal && isPicked && !isAnswer && <CloseIcon size={14} color="#EF4444" />}
+                </motion.button>
+              )
+            })}
+          </div>
+
+          {q.hint && (
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              {showHint ? (
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', fontStyle: 'italic', margin: 0 }}>Hint: {q.hint}</p>
+              ) : (
+                <button onClick={() => setShowHint(true)} style={{ background: 'none', border: 'none', color: '#A78BFA', fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>Need a hint?</button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const progress = ((sceneIndex + 1) / story.scenes.length) * 100
+
+  // ---------- Story (mode-specific body) ----------
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A' }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        <motion.button onClick={() => navigate('story')}
-          style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
-          whileTap={{ scale: 0.9 }}>
+        <motion.button onClick={() => navigate('story')} whileTap={{ scale: 0.9 }}
+          style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
           <BackArrowIcon size={16} color="rgba(255,255,255,0.7)" />
         </motion.button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: 'white', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            The Three Lights of Whisperwood
-          </p>
+          <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: 'white', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{story.title}</p>
         </div>
-        <div style={{ padding: '3px 10px', borderRadius: '9999px', background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.3)' }}>
-          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: '#A78BFA' }}>
-            Chapter {sceneIndex + 1} of {story.scenes.length}
-          </span>
+        {/* reading-mode badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '9999px', background: `${rc.color}22`, border: `1px solid ${rc.color}55` }}>
+          <rc.Icon size={12} color={rc.color} />
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.62rem', fontWeight: 700, color: rc.color }}>{rc.label}</span>
         </div>
-        <motion.button style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }} whileTap={{ scale: 0.9 }}>
-          <HeartIcon size={14} color="#EC4899" filled={false} />
-        </motion.button>
-        <motion.button style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }} whileTap={{ scale: 0.9 }}>
-          <MenuDotsIcon size={14} color="rgba(255,255,255,0.5)" />
-        </motion.button>
       </div>
 
-      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {/* Character Cards */}
-        <div style={{ padding: '0.5rem 1rem', display: 'flex', gap: '8px', marginBottom: '0.75rem' }}>
-          {characterCards.map((char, i) => (
-            <motion.div key={char.name} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.08 }}
-              style={{
-                flex: 1, borderRadius: '20px', overflow: 'hidden',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
-                backdropFilter: 'blur(16px)',
-              }}>
-              <div style={{
-                height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: `linear-gradient(135deg, ${char.color}30, ${char.color}10)`,
-              }}>
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '50%',
-                  background: `${char.color}30`, border: `2px solid ${char.color}40`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: '1.2rem' }}>{char.name === 'Kael' ? '🦊' : char.name === 'Mira' ? '🐦' : '🦉'}</span>
-                </div>
-              </div>
-              <div style={{ padding: '6px 8px', textAlign: 'center' }}>
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.8rem', fontWeight: 700, color: 'white', margin: 0 }}>{char.name}</p>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 8px', borderRadius: '9999px', background: `${char.color}25`, marginTop: '3px' }}>
-                  <TagIcon type={char.tagIcon} size={9} />
-                  <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: char.color }}>{char.tag}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+      {/* Chapter progress */}
+      <div style={{ padding: '0 1rem 0.5rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <motion.div animate={{ width: `${progress}%` }} style={{ height: '100%', background: `linear-gradient(90deg,${rc.color},${rc.color}99)` }} />
+          </div>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>Chapter {sceneIndex + 1} of {story.scenes.length}</span>
         </div>
+      </div>
 
-        {/* Scene illustration */}
-        <AnimatePresence mode="wait">
-          <motion.div key={sceneIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 1rem' }}>
-            <div style={{
-              width: '100%', height: '140px', borderRadius: '20px', overflow: 'hidden',
-              background: scene?.background || 'linear-gradient(180deg, #1a2a1a, #0d2818)',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              <img src={scene?.image} alt="Scene" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
+      {/* Illustration */}
+      <AnimatePresence mode="wait">
+        <motion.div key={sceneIndex} initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          style={{ display: 'flex', justifyContent: 'center', padding: '0.25rem 1rem 0.5rem', flexShrink: 0 }}>
+          <div style={{ width: '100%', height: mode === 'listen' ? '220px' : '150px', borderRadius: '20px', overflow: 'hidden', background: scene?.background || 'linear-gradient(180deg,#1a2a1a,#0d2818)', border: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
+            <img src={scene?.image} alt="Scene" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />
+            {mode === 'listen' && (
+              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
+                style={{ position: 'absolute', bottom: 10, left: 10, width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${character.color}`, boxShadow: `0 6px 18px ${character.color}55` }}>
+                <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem', WebkitOverflowScrolling: 'touch' }}>
+        {mode === 'listen' && (
+          <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '40px', marginBottom: '0.75rem' }}>
+              {[...Array(9)].map((_, i) => (
+                <motion.div key={i} style={{ width: '5px', borderRadius: '3px', background: rc.color }}
+                  animate={{ height: isPlaying ? [8, 26, 8] : 8 }} transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.08 }} />
+              ))}
             </div>
-          </motion.div>
-        </AnimatePresence>
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.05rem', fontWeight: 700, color: 'white', margin: 0 }}>
+              {isPlaying ? `${character.name} is telling the story…` : 'Tap play to hear this part'}
+            </p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: '6px 0 0' }}>Listen along, then tap Next</p>
+          </div>
+        )}
 
-        {/* Story text */}
-        <div style={{ padding: '0.75rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            <motion.div style={{
-              width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-              border: `2px solid ${character.color}40`,
-            }} animate={isPlaying ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.4, repeat: Infinity }}>
+        {mode === 'beginner' && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '0.25rem 0 1rem' }}>
+            <motion.div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}55` }} animate={isPlaying ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.4, repeat: Infinity }}>
               <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </motion.div>
-            <div style={{
-              flex: 1, backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem',
-              padding: '0.75rem 1rem',
-            }}>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', lineHeight: 1.6, fontWeight: 600, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-                {displayedText}
-                {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ color: 'rgba(139,92,246,0.5)' }}>|</motion.span>}
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem', padding: '0.9rem 1rem' }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '1.45rem', lineHeight: 1.85, fontWeight: 700, margin: 0 }}>
+                {tokens.map((t, i) => {
+                  if (!t.isWord) return <span key={i}>{t.text}</span>
+                  const read = t.order < spokenWord
+                  const current = t.order === spokenWord
+                  return (
+                    <span key={i} onClick={() => speakWord(t.text)}
+                      style={{ cursor: 'pointer', borderRadius: '6px', padding: '0 1px',
+                        color: current ? '#0F172A' : read ? rc.color : 'rgba(255,255,255,0.6)',
+                        background: current ? '#FBBF24' : 'transparent', transition: 'color 0.15s, background 0.15s' }}>
+                      {t.text}
+                    </span>
+                  )
+                })}
               </p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', margin: '0.6rem 0 0' }}>Tap any word to hear it</p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Reaction */}
-        <AnimatePresence>
-          {showReaction && (
-            <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
-              style={{ margin: '0 1rem', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckIcon size={12} color="#10B981" />
-              </div>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{reactionText}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Audio Player */}
-      <div style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-        <motion.button
-          onClick={() => { setIsPlaying(!isPlaying); if (isPlaying) stopSpeaking() }}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
-          }}>
-          {isPlaying ? <PauseIcon size={16} color="white" /> : <PlayIcon size={16} color="white" />}
-        </motion.button>
-        {/* Waveform */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '2px', height: '24px' }}>
-          {[...Array(30)].map((_, i) => {
-            const h = 4 + Math.sin(i * 0.5) * 8 + Math.random() * 4
-            return <div key={i} style={{ width: '3px', height: `${h}px`, borderRadius: '2px', background: i < 30 * audioProgress / 100 ? '#8B5CF6' : 'rgba(255,255,255,0.15)' }} />
-          })}
-        </div>
-        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
-          1:24 / 4:36
-        </span>
-        <div style={{ padding: '3px 8px', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
-          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>1.0x</span>
-        </div>
-      </div>
-
-      {/* Interaction Prompt */}
-      {showQuestion && scene?.question && (
-        <div style={{ padding: '0 1rem 0.5rem', flexShrink: 0 }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.9)', borderRadius: '20px', padding: '0.75rem 1rem',
-            display: 'flex', alignItems: 'center', gap: '10px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-          }}>
-            <StarIcon size={18} color="#F59E0B" />
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#1F2937', margin: 0, flex: 1 }}>
-              {scene.question}
+        {mode === 'advanced' && (
+          <div style={{ padding: '0.25rem 0 1rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem', padding: '1.1rem 1.15rem' }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '1.02rem', lineHeight: 1.75, fontWeight: 500, color: 'rgba(255,255,255,0.9)', margin: 0 }}>{scene?.text}</p>
+            </div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', margin: '0.75rem 2px 0' }}>
+              Read carefully — a comprehension quiz comes at the end.
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Microphone Button */}
-      {showQuestion && scene?.questionType === 'open' && (
-        <div style={{ padding: '0 1rem 0.5rem', textAlign: 'center', flexShrink: 0 }}>
-          <motion.button
-            onClick={async () => {
-              if (!isSpeechSupported()) { handleAnswer('(no voice)'); return }
-              setIsListening(true)
-              try { const r = await listen({ timeout: 15000 }); if (r.transcript) handleAnswer(r.transcript) } catch(e) { console.warn(e) }
-              setIsListening(false)
-            }}
-            whileTap={{ scale: 0.95 }}
-            animate={isListening ? { scale: [1, 1.05, 1] } : {}}
-            transition={{ duration: 0.8, repeat: isListening ? Infinity : 0 }}
-            style={{
-              width: '64px', height: '64px', borderRadius: '50%', margin: '0 auto',
-              background: 'linear-gradient(135deg, #EC4899, #F472B6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', border: 'none',
-              boxShadow: '0 4px 20px rgba(236,72,153,0.3)',
-            }}>
-            <MicIcon size={24} color="white" />
-          </motion.button>
-          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', margin: '6px 0 0' }}>
-            Tap the mic and share your thoughts.
+      {/* Audio control (listen + beginner + advanced-optional) */}
+      <div style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <motion.button onClick={togglePlay} whileTap={{ scale: 0.9 }}
+          style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${rc.color},${rc.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none', boxShadow: `0 4px 16px ${rc.color}55` }}>
+          {isPlaying ? <PauseIcon size={16} color="white" /> : <PlayIcon size={16} color="white" />}
+        </motion.button>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', margin: 0 }}>
+            {mode === 'advanced' ? 'Read it aloud' : mode === 'beginner' ? 'Hear it & read along' : 'Hear the story'}
+          </p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+            {isPlaying ? 'Playing…' : 'Tap to play'}
           </p>
         </div>
-      )}
-
-      {/* Footer Actions */}
-      <div style={{ padding: '0.5rem 1rem 1rem', display: 'flex', gap: '10px', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <motion.button whileTap={{ scale: 0.97 }}
-          style={{
-            flex: 1, borderRadius: '16px', padding: '0.6rem',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
-            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-          }}>
-          <BoxIcon size={16} color="rgba(255,255,255,0.5)" />
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Archive</p>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', margin: 0 }}>4 saved</p>
-          </div>
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.97 }}
-          style={{
-            flex: 1, borderRadius: '16px', padding: '0.6rem',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
-            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-          }}>
-          <RefreshIcon size={16} color="rgba(255,255,255,0.5)" />
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Retell the Story</p>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', margin: 0 }}>Hear it again!</p>
-          </div>
-          <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', marginLeft: 'auto' }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
+        <motion.button onClick={narrate} whileTap={{ scale: 0.92 }}
+          style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+          <RefreshIcon size={13} color="rgba(255,255,255,0.6)" />
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Again</span>
         </motion.button>
       </div>
 
-      {/* Choice buttons (for choice-type questions) */}
-      {showQuestion && scene?.questionType === 'choice' && (
-        <div style={{ padding: '0 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-          {scene.choices.map((choice, i) => (
-            <motion.button key={i} initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-              onClick={() => { setSelectedChoice(i); handleAnswer(choice) }}
-              disabled={selectedChoice !== null}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '0.75rem 1rem', borderRadius: '16px',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                cursor: 'pointer', textAlign: 'left', width: '100%',
-              }}>
-              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#A78BFA' }}>
-                {['A', 'B', 'C'][i]}
-              </span>
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
-                {choice}
-              </span>
-            </motion.button>
-          ))}
-        </div>
-      )}
-
-      {/* Continue / Skip buttons */}
-      {!showQuestion && (
-        <div style={{ padding: '0 1rem 1rem', flexShrink: 0 }}>
-          <button className="btn btn-primary" onClick={handleSkip} style={{ maxWidth: '100%' }}>
-            {isTyping ? 'SKIP' : 'CONTINUE'}
-          </button>
-        </div>
-      )}
+      {/* Advance */}
+      <div style={{ padding: '0.4rem 1rem 1rem', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <button className="btn btn-primary" onClick={advanceOrFinish} style={{ maxWidth: '100%' }}>
+          {sceneIndex < story.scenes.length - 1 ? 'NEXT' : (mode === 'advanced' && quiz.length ? 'START QUIZ' : 'FINISH')}
+        </button>
+      </div>
     </div>
   )
-}
-
-function getReaction(answer, characterId) {
-  const reactions = {
-    owl: ["Wonderful thinking!", "You understand it well!", "What a wise answer!"],
-    bear: ["AMAZING answer, buddy!", "You nailed it!", "That's fantastic!"],
-    bunny: ["Ooh SO good!!", "You're SO clever!", "I LOVE that answer!"],
-  }
-  const options = reactions[characterId] || reactions.owl
-  return options[Math.floor(Math.random() * options.length)]
 }

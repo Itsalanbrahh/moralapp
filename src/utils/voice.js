@@ -24,6 +24,13 @@ export function speak(text, options = {}) {
     )
     if (preferred) utterance.voice = preferred
 
+    // Word-boundary events power the read-along ("karaoke") highlight for beginners.
+    if (options.onBoundary) {
+      utterance.onboundary = (e) => {
+        if (e.name === undefined || e.name === 'word') options.onBoundary(e)
+      }
+    }
+
     utterance.onend = resolve
     utterance.onerror = resolve
     currentUtterance = utterance

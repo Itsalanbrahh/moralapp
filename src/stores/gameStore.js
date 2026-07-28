@@ -42,6 +42,12 @@ const initialState = {
     garden: [],
   },
 
+  // Reading experience tailored to the child's reading level:
+  //  'listen'   → pre-reader: picture + narration, no reading required
+  //  'beginner' → learning to read: big read-along text with word highlighting
+  //  'advanced' → confident reader: reads it themselves + comprehension quiz
+  readingLevel: 'listen',
+
   // Audio settings
   voiceEnabled: true,
   ttsVoice: null,
@@ -171,6 +177,7 @@ export const useGameStore = create(
       })),
 
       // Settings
+      setReadingLevel: (level) => set({ readingLevel: level }),
       setVoiceEnabled: (enabled) => set({ voiceEnabled: enabled }),
       setSpeechRate: (rate) => set({ speechRate: rate }),
 
