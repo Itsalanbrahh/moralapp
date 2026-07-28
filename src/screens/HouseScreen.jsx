@@ -10,8 +10,8 @@ import {
 import { BackArrowIcon, StarIcon, HeartIcon, BoltIcon, LeafIcon, CloseIcon, CheckIcon, LockIcon } from '../components/SVGIcons'
 
 // Floor band (as % of the room box). Items live on the floor and scale with depth.
-const FLOOR_TOP = 47
-const FLOOR_BOTTOM = 91
+const FLOOR_TOP = 58
+const FLOOR_BOTTOM = 92
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
 const depthScale = (y) => 0.66 + ((y - FLOOR_TOP) / (FLOOR_BOTTOM - FLOOR_TOP)) * 0.6
 
@@ -27,6 +27,111 @@ function RedoIcon({ size = 16, color = '#6B7280' }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 7v6h-6" /><path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
     </svg>
+  )
+}
+
+// The fixed painted "dollhouse" frame: peaked shingle roof, wooden gable + round
+// window, cozy interior wall (recolorable), wood floor and a star rug — matching
+// the reference art. Purely decorative (pointerEvents: none) so items drag over it.
+function HouseShell({ wall, floor }) {
+  const WOOD = '#B07C42', WOOD_D = '#966634', WOOD_L = '#C99456'
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      {/* Roof (purple shingles) */}
+      <div style={{ position: 'absolute', top: '-1%', left: '-6%', right: '-6%', height: '33%',
+        clipPath: 'polygon(50% 0,100% 100%,0 100%)',
+        background: 'repeating-linear-gradient(179deg,#9A82DE 0 11px,#8367C9 11px 13px,#6F53B6 13px 15px)',
+        filter: 'drop-shadow(0 5px 6px rgba(80,50,150,0.22))' }} />
+      {/* Roof peak cap */}
+      <div style={{ position: 'absolute', top: '-1%', left: '50%', transform: 'translateX(-50%)', width: '14px', height: '14px', borderRadius: '50%', background: '#B7A2EC', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+
+      {/* Wooden gable wall (triangle) */}
+      <div style={{ position: 'absolute', top: '5.5%', left: '12%', right: '12%', height: '26.5%',
+        clipPath: 'polygon(50% 0,100% 100%,0 100%)',
+        background: 'linear-gradient(180deg,#E9C68E,#D4A566)' }} />
+
+      {/* Round window in the gable */}
+      <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '19%', aspectRatio: '1', borderRadius: '50%',
+        background: wall.dark ? 'radial-gradient(circle at 38% 32%,#5B3AA6,#241a52)' : 'radial-gradient(circle at 38% 30%,#FCE9A6,#F6ADC6 68%,#E188AC)',
+        border: `5px solid ${WOOD_L}`, boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.28),0 3px 8px rgba(0,0,0,0.16)' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%',
+          background: 'linear-gradient(90deg,transparent 46%,rgba(201,148,86,0.9) 46% 54%,transparent 54%),linear-gradient(0deg,transparent 46%,rgba(201,148,86,0.9) 46% 54%,transparent 54%)' }} />
+        {wall.dark && [...Array(4)].map((_, i) => (
+          <div key={i} style={{ position: 'absolute', width: 2, height: 2, borderRadius: '50%', background: 'white',
+            top: `${25 + (i * 17) % 55}%`, left: `${22 + (i * 29) % 55}%` }} />
+        ))}
+      </div>
+
+      {/* Eave beam */}
+      <div style={{ position: 'absolute', top: '30.5%', left: '-5%', right: '-5%', height: '4%', borderRadius: '7px',
+        background: `linear-gradient(180deg,${WOOD_L},${WOOD_D})`, boxShadow: '0 3px 6px rgba(0,0,0,0.18)' }} />
+
+      {/* String lights under the eave */}
+      <svg viewBox="0 0 300 34" preserveAspectRatio="none" style={{ position: 'absolute', top: '33%', left: 0, width: '100%', height: '34px' }}>
+        <path d="M4 4 Q75 30 150 10 T296 6" fill="none" stroke="rgba(120,80,40,0.5)" strokeWidth="1.5" />
+        {[...Array(9)].map((_, i) => (
+          <g key={i}>
+            <line x1={16 + i * 33} y1={i % 2 ? 14 : 8} x2={16 + i * 33} y2={i % 2 ? 20 : 14} stroke="rgba(120,80,40,0.5)" strokeWidth="1" />
+            <circle cx={16 + i * 33} cy={i % 2 ? 22 : 16} r="3.4" fill={['#FBBF24', '#F472B6', '#A78BFA', '#34D399'][i % 4]} />
+          </g>
+        ))}
+      </svg>
+
+      {/* Solid wood base fills the entire floor zone (no lavender gap near the horizon) */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: `${FLOOR_TOP - 2}%`, bottom: 0,
+        background: `linear-gradient(180deg,${floor.base},${floor.base})`, backgroundColor: floor.base }} />
+      {/* Isometric plank texture on top of the base (recolorable). Drawn BEFORE the wall
+          so its overflow above the floor line is covered by the opaque wall. */}
+      <div style={{ position: 'absolute', left: '-30%', right: '-30%', top: '32%', bottom: 0,
+        background: floor.floor, backgroundColor: floor.base,
+        transform: 'perspective(700px) rotateX(45deg)', transformOrigin: '50% 100%',
+        boxShadow: 'inset 0 12px 50px rgba(0,0,0,0.15)' }} />
+
+      {/* Interior wall (recolorable) */}
+      <div style={{ position: 'absolute', top: '33%', left: 0, right: 0, height: `${FLOOR_TOP - 32}%`, background: wall.wall }}>
+        {wall.plank && (
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.5,
+            background: 'repeating-linear-gradient(90deg,transparent 0 46px,rgba(150,102,52,0.35) 46px 48px)' }} />
+        )}
+      </div>
+
+      {/* Framed picture on the wall */}
+      <div style={{ position: 'absolute', left: '13%', top: '40%', width: '17%', height: '11%', borderRadius: '5px', background: WOOD_D, padding: '3px', boxShadow: '0 3px 6px rgba(0,0,0,0.18)' }}>
+        <div style={{ width: '100%', height: '100%', borderRadius: '3px', background: 'linear-gradient(180deg,#BFE3FF 0 55%,#8CD0A6 55% 100%)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '18%', left: '20%', width: '26%', height: '26%', borderRadius: '50%', background: '#FDE68A' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%', background: '#6FB585', clipPath: 'polygon(0 40%,25% 0,50% 45%,75% 5%,100% 40%,100% 100%,0 100%)' }} />
+        </div>
+      </div>
+
+      {/* Little wall shelf with books */}
+      <div style={{ position: 'absolute', right: '13%', top: '46%', width: '20%', height: '4px', borderRadius: '3px', background: WOOD, boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }}>
+        {['#EF6F6F', '#6FA8EF', '#F4B740', '#7ED07E'].map((c, i) => (
+          <div key={i} style={{ position: 'absolute', bottom: '3px', left: `${8 + i * 20}%`, width: '13%', height: '20px', borderRadius: '2px', background: c }} />
+        ))}
+      </div>
+
+      {/* Hanging plant from the eave */}
+      <div style={{ position: 'absolute', right: '24%', top: '34.5%', width: '11%', textAlign: 'center' }}>
+        <div style={{ width: '1px', height: '14px', background: 'rgba(120,80,40,0.4)', margin: '0 auto' }} />
+        <div style={{ fontSize: '20px', lineHeight: 1 }}>🪴</div>
+      </div>
+
+      {/* Wooden corner posts framing the house */}
+      <div style={{ position: 'absolute', top: '31%', bottom: 0, left: '-1%', width: '5%', background: `linear-gradient(90deg,${WOOD_D},${WOOD})` }} />
+      <div style={{ position: 'absolute', top: '31%', bottom: 0, right: '-1%', width: '5%', background: `linear-gradient(270deg,${WOOD_D},${WOOD})` }} />
+
+      {/* Baseboard where wall meets floor */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: `${FLOOR_TOP - 1}%`, height: '2.5%', background: `linear-gradient(180deg,${WOOD_L},${WOOD_D})`, opacity: 0.9 }} />
+
+      {/* Star rug */}
+      <div style={{ position: 'absolute', left: '50%', top: '80%', transform: 'translate(-50%,-50%)', width: '60%', height: '19%', borderRadius: '50%',
+        background: 'radial-gradient(ellipse at center,#B49BE8 0 60%,#9C80DD 100%)', boxShadow: '0 5px 12px rgba(0,0,0,0.14)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg viewBox="0 0 24 24" width="34%" height="60%" style={{ opacity: 0.9 }}>
+          <polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9" fill="#F3ECC8" />
+        </svg>
+      </div>
+    </div>
   )
 }
 
@@ -196,39 +301,11 @@ export default function HouseScreen({ navigate }) {
           position: 'relative', margin: '0 12px', borderRadius: '22px', overflow: 'hidden',
           flex: 1, minHeight: 0, touchAction: 'none',
           boxShadow: '0 10px 30px rgba(91,33,182,0.15)', border: '1px solid rgba(0,0,0,0.05)',
-          background: wall.wall,
+          background: 'linear-gradient(180deg,#E7DEFB 0%,#F1E9FE 45%,#F7F1FF 100%)',
         }}
       >
-        {/* Back wall decorations */}
-        {wall.dark && [...Array(14)].map((_, i) => (
-          <div key={i} style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', background: 'white', opacity: 0.7,
-            top: `${5 + Math.random() * 35}%`, left: `${5 + Math.random() * 90}%` }} />
-        ))}
-        {/* Round window */}
-        <div style={{ position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', width: '62px', height: '62px', borderRadius: '50%',
-          background: wall.dark ? 'radial-gradient(circle at 40% 35%,#4C1D95,#1E1B4B)' : 'radial-gradient(circle at 40% 35%,#FDE68A,#FBCFE8)',
-          border: '5px solid rgba(255,255,255,0.85)', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%',
-            background: 'linear-gradient(90deg,transparent 47%,rgba(255,255,255,0.7) 47% 53%,transparent 53%),linear-gradient(0deg,transparent 47%,rgba(255,255,255,0.7) 47% 53%,transparent 53%)' }} />
-        </div>
-        {/* String lights */}
-        <svg viewBox="0 0 300 40" preserveAspectRatio="none" style={{ position: 'absolute', top: '3%', left: 0, width: '100%', height: '38px', opacity: 0.9 }}>
-          <path d="M0 6 Q75 34 150 12 T300 8" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-          {[...Array(9)].map((_, i) => (
-            <circle key={i} cx={15 + i * 34} cy={16 + (i % 2) * 8} r="3.2" fill={['#FBBF24', '#F472B6', '#A78BFA', '#34D399'][i % 4]} />
-          ))}
-        </svg>
-
-        {/* Floor plane (isometric) — top edge sits high so, once foreshortened, the wood
-            reaches up to the skirting line and fills the whole floor zone */}
-        <div style={{
-          position: 'absolute', left: '-32%', right: '-32%', top: '24%', bottom: 0,
-          background: floor.floor, backgroundColor: floor.base,
-          transform: 'perspective(680px) rotateX(46deg)', transformOrigin: '50% 100%',
-          boxShadow: 'inset 0 10px 50px rgba(0,0,0,0.16)', pointerEvents: 'none',
-        }} />
-        {/* Soft blend where wall meets floor */}
-        <div style={{ position: 'absolute', left: 0, right: 0, top: `${FLOOR_TOP - 3}%`, height: '5%', background: 'linear-gradient(180deg,rgba(0,0,0,0.06),transparent)', pointerEvents: 'none' }} />
+        {/* ===== Painted dollhouse shell (roof, gable, walls, floor, rug) ===== */}
+        <HouseShell wall={wall} floor={floor} />
 
         {/* Character avatar standing in the room */}
         <motion.div

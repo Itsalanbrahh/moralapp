@@ -5,6 +5,7 @@
 
 // ---- Wall styles (cosmetic, always available) ----
 export const WALLS = {
+  cozywood: { id: 'cozywood', name: 'Cozy Wood', wall: 'linear-gradient(180deg,#F3DDBB 0%,#E9CB9C 60%,#E0BC86 100%)', swatch: 'linear-gradient(135deg,#F3DDBB,#D9B885)', plank: true },
   lavender: { id: 'lavender', name: 'Lavender', wall: 'linear-gradient(180deg,#E9D5FF 0%,#F3E8FF 55%,#FBF5FF 100%)', swatch: 'linear-gradient(135deg,#E9D5FF,#C4B5FD)' },
   mint:     { id: 'mint',     name: 'Mint',     wall: 'linear-gradient(180deg,#A7F3D0 0%,#D1FAE5 55%,#ECFDF5 100%)', swatch: 'linear-gradient(135deg,#A7F3D0,#6EE7B7)' },
   sky:      { id: 'sky',      name: 'Sky',      wall: 'linear-gradient(180deg,#BFDBFE 0%,#DBEAFE 55%,#EFF6FF 100%)', swatch: 'linear-gradient(135deg,#BFDBFE,#93C5FD)' },

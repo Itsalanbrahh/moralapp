@@ -32,7 +32,7 @@ const initialState = {
   // House state (interactive room)
   // placedItems: [{ uid, itemId, kind: 'item' | 'pet', x, y }] positions are % of the room
   placedItems: [],
-  wallStyle: 'lavender',
+  wallStyle: 'cozywood',
   floorStyle: 'wood',
 
   // Legacy grid layout (kept for backward compatibility with old saves)
