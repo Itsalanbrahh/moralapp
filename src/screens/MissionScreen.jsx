@@ -17,7 +17,7 @@ export default function MissionScreen({ navigate }) {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" style={{
-      background: 'linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%)',
+      background: 'linear-gradient(180deg,#E4F7EE 0%,#EAF6F1 45%,#F3F1FB 100%)',
     }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>

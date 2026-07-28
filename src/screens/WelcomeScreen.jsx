@@ -72,24 +72,26 @@ export default function WelcomeScreen({ navigate }) {
         transition={{ duration: 0.6 }}
         className="text-center relative z-10 mt-4 mb-2"
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
           <h1 style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '2.5rem',
-            lineHeight: 1.1, margin: 0,
+            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '3.4rem',
+            lineHeight: 0.92, margin: 0, letterSpacing: '-0.5px',
+            textShadow: '0 3px 0 rgba(255,255,255,0.65), 0 8px 18px rgba(124,58,237,0.22)',
           }}>
-            <span style={{ color: '#8B5CF6' }}>Build</span>
-            <span style={{ color: '#3B82F6' }}>Moral</span>
+            <span style={{ display: 'block', color: '#7C3AED' }}>Build</span>
+            <span style={{ display: 'block', color: '#3B82F6' }}>Moral</span>
           </h1>
           <motion.div
+            style={{ position: 'absolute', top: '-10px', right: '-14px' }}
             animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <StarIcon size={22} color="#FBBF24" />
+            <StarIcon size={28} color="#FBBF24" />
           </motion.div>
         </div>
         <p style={{
-          fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem',
-          color: '#4A5568', margin: '2px 0 0',
+          fontFamily: "'Nunito', sans-serif", fontSize: '0.95rem', fontWeight: 600,
+          color: '#5B4B7A', margin: '10px 0 0',
         }}>
           Stories that help kids grow.
         </p>

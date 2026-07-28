@@ -10,7 +10,7 @@ export default function StoryScreen({ navigate }) {
   const stories = getAllStories()
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg,#F1EAFB 0%,#F6EDF8 45%,#FCEFF4 100%)' }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <motion.button

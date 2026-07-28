@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
-import { StarIcon, ShieldIcon, ArmchairIcon, BoltIcon, BellIcon, BookIcon, MapIcon, HomeIcon, HeartIcon, CompassIcon, PlayIcon, ChevronRightIcon, PlusIcon } from '../components/SVGIcons'
+import { StarIcon, ShieldIcon, ArmchairIcon, BellIcon, PlayIcon, PlusIcon } from '../components/SVGIcons'
+import { DreamyBackground, FeatureIcon, BadgeArt } from '../components/AppArt'
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
@@ -10,12 +11,16 @@ export default function HomeScreen({ navigate }) {
   const character = getCharacter(selectedCharacter)
   const currentLevelXP = XP_PER_LEVEL[level - 1] || 0
   const nextLevelXP = XP_PER_LEVEL[level] || XP_PER_LEVEL[XP_PER_LEVEL.length - 1]
-  const progress = Math.min((xp - currentLevelXP) / (nextLevelXP - currentLevelXP), 1)
+  const intoLevel = Math.max(0, xp - currentLevelXP)
+  const levelSpan = Math.max(1, nextLevelXP - currentLevelXP)
+  const progress = Math.min(intoLevel / levelSpan, 1)
 
   const displayName = childName || 'Star Explorer'
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ position: 'relative', background: '#F3EEFB' }}>
+      <DreamyBackground variant="lavender" />
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -56,7 +61,7 @@ export default function HomeScreen({ navigate }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: '#9CA3AF', fontWeight: 600 }}>Progress</span>
           <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: '#8B5CF6', fontWeight: 700 }}>
-            {xp - currentLevelXP} / {nextLevelXP - currentLevelXP} XP
+            {intoLevel} / {levelSpan} XP
           </span>
         </div>
         <div style={{ height: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
@@ -76,9 +81,9 @@ export default function HomeScreen({ navigate }) {
         {/* Quick Actions */}
         <div style={{ padding: '0 1rem', display: 'flex', gap: '10px', marginBottom: '1rem' }}>
           {[
-            { id: 'story', label: 'Storytelling', gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', icon: <BookIcon size={28} color="white" /> },
-            { id: 'mission', label: 'Missions', gradient: 'linear-gradient(135deg, #10B981, #059669)', icon: <MapIcon size={28} color="white" /> },
-            { id: 'house', label: 'House', gradient: 'linear-gradient(135deg, #3B82F6, #2563EB)', icon: <HomeIcon size={28} color="white" /> },
+            { id: 'story', label: 'Storytelling', type: 'story', bg: 'linear-gradient(160deg,#EDE7FE,#E4D8FB)', border: 'rgba(167,139,250,0.4)', text: '#6D28D9', shadow: 'rgba(139,92,246,0.22)' },
+            { id: 'mission', label: 'Missions', type: 'mission', bg: 'linear-gradient(160deg,#DDF6EA,#CFF0E0)', border: 'rgba(52,211,153,0.4)', text: '#059669', shadow: 'rgba(16,185,129,0.2)' },
+            { id: 'house', label: 'House', type: 'house', bg: 'linear-gradient(160deg,#E1EEFE,#D3E4FC)', border: 'rgba(96,165,250,0.4)', text: '#2563EB', shadow: 'rgba(59,130,246,0.2)' },
           ].map((action, i) => (
             <motion.button
               key={action.id}
@@ -89,17 +94,17 @@ export default function HomeScreen({ navigate }) {
               whileTap={{ scale: 0.95 }}
               style={{
                 flex: 1, aspectRatio: '1', borderRadius: '24px',
-                background: action.gradient,
-                border: '1px solid rgba(255,255,255,0.2)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                background: action.bg,
+                border: `1px solid ${action.border}`,
+                boxShadow: `0 6px 18px ${action.shadow}`,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '6px', cursor: 'pointer', padding: '0.75rem',
+                gap: '4px', cursor: 'pointer', padding: '0.75rem',
               }}
             >
-              {action.icon}
+              <FeatureIcon type={action.type} size={50} />
               <span style={{
-                fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700,
-                color: 'rgba(255,255,255,0.9)',
+                fontFamily: "'Baloo 2', cursive", fontSize: '0.8rem', fontWeight: 700,
+                color: action.text,
               }}>
                 {action.label}
               </span>
@@ -108,12 +113,13 @@ export default function HomeScreen({ navigate }) {
         </div>
 
         {/* Progress Stats */}
+        <p style={{ padding: '0 1rem', fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: '0 0 0.5rem' }}>Your Progress</p>
         <div style={{ padding: '0 1rem', display: 'flex', gap: '8px', marginBottom: '1rem' }}>
           {[
-            { icon: <StarIcon size={14} color="#F59E0B" />, value: xp, label: 'Total XP', color: '#F59E0B' },
-            { icon: <ShieldIcon size={14} color="#8B5CF6" />, value: badges.length, label: 'Earned', color: '#8B5CF6' },
-            { icon: <StarIcon size={14} color="#3B82F6" />, value: stars, label: 'Stars', color: '#3B82F6' },
-            { icon: <ArmchairIcon size={14} color="#10B981" />, value: gear.length, label: 'Collected', color: '#10B981' },
+            { icon: <StarIcon size={14} color="#F59E0B" />, value: xp, top: 'XP', label: 'Total XP', color: '#F59E0B', bg: 'rgba(254,243,199,0.85)' },
+            { icon: <ShieldIcon size={14} color="#8B5CF6" />, value: badges.length, top: 'Badges', label: 'Earned', color: '#8B5CF6', bg: 'rgba(237,233,254,0.85)' },
+            { icon: <StarIcon size={14} color="#3B82F6" />, value: stars, top: 'Stars', label: 'Stars', color: '#3B82F6', bg: 'rgba(219,234,254,0.85)' },
+            { icon: <ArmchairIcon size={14} color="#EC4899" />, value: gear.length, top: 'Gear', label: 'Collected', color: '#EC4899', bg: 'rgba(252,231,243,0.85)' },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -121,19 +127,18 @@ export default function HomeScreen({ navigate }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.05 }}
               style={{
-                flex: 1, borderRadius: '16px', padding: '0.6rem 0.4rem',
-                background: 'white', border: '1px solid rgba(0,0,0,0.04)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                textAlign: 'center',
+                flex: 1, borderRadius: '18px', padding: '0.65rem 0.35rem',
+                background: stat.bg, border: '1px solid rgba(255,255,255,0.7)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                textAlign: 'center', backdropFilter: 'blur(6px)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2px' }}>
-                {stat.icon}
-              </div>
-              <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#1F2937', margin: 0, lineHeight: 1 }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.58rem', fontWeight: 700, color: stat.color, margin: '0 0 2px' }}>{stat.top}</p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2px' }}>{stat.icon}</div>
+              <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.05rem', fontWeight: 800, color: stat.color, margin: 0, lineHeight: 1 }}>
                 {stat.value}
               </p>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', color: '#9CA3AF', fontWeight: 600, margin: 0 }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.52rem', color: '#9CA3AF', fontWeight: 600, margin: 0 }}>
                 {stat.label}
               </p>
             </motion.div>
@@ -150,8 +155,8 @@ export default function HomeScreen({ navigate }) {
             whileTap={{ scale: 0.98 }}
             style={{
               width: '100%', borderRadius: '20px', overflow: 'hidden',
-              background: 'white', border: '1px solid rgba(0,0,0,0.04)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+              background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.7)',
+              boxShadow: '0 6px 20px rgba(124,58,237,0.1)', backdropFilter: 'blur(10px)',
               display: 'flex', alignItems: 'stretch', cursor: 'pointer',
               textAlign: 'left', padding: 0,
             }}
@@ -163,10 +168,11 @@ export default function HomeScreen({ navigate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
             }}>
-              <img src="/assets/stories/whisperwood-intro.png" alt="Story" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
+              <img src="/assets/stories/whisperwood-intro.png" alt="Story" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} />
             </div>
 
             <div style={{ flex: 1, padding: '0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: '0.62rem', color: '#A78BFA', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Continue Story</p>
               <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: '#1F2937', margin: 0, lineHeight: 1.2 }}>
                 The Three Lights of Whisperwood
               </p>
@@ -194,31 +200,14 @@ export default function HomeScreen({ navigate }) {
 
         {/* Recent Badges */}
         <div style={{ padding: '0 1rem', marginBottom: '0.75rem' }}>
-          <p style={{
-            fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700,
-            color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em',
-            marginBottom: '0.5rem', paddingLeft: '2px',
-          }}>
-            Recent Badges
-          </p>
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
-            {[
-              { icon: <HeartIcon size={18} color="#EC4899" />, bg: '#FCE7F3' },
-              { icon: <CompassIcon size={18} color="#8B5CF6" />, bg: '#EDE9FE' },
-              { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round"><path d="M12 22V8" /><path d="M5 12l7-8 7 8" /><path d="M8 16l4-5 4 5" /></svg>, bg: '#D1FAE5' },
-              { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><path d="M12 2v2" /><rect x="7" y="8" width="10" height="10" rx="2" /><circle cx="12" cy="13" r="2" fill="#F59E0B30" /></svg>, bg: '#FEF3C7' },
-            ].map((badge, i) => (
-              <motion.div
-                key={i}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.35 + i * 0.05, type: 'spring' }}
-                style={{
-                  width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0,
-                  background: badge.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {badge.icon}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0 }}>Recent Badges</p>
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', fontWeight: 700, color: '#8B5CF6' }}>View All</span>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {['heart', 'compass', 'tree', 'lantern'].map((type, i) => (
+              <motion.div key={type} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.35 + i * 0.05, type: 'spring' }} style={{ flexShrink: 0 }}>
+                <BadgeArt type={type} size={48} />
               </motion.div>
             ))}
             <motion.div
@@ -226,18 +215,19 @@ export default function HomeScreen({ navigate }) {
               animate={{ scale: 1 }}
               transition={{ delay: 0.55, type: 'spring' }}
               style={{
-                width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(0,0,0,0.04)', border: '2px dashed rgba(0,0,0,0.1)',
+                width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, alignSelf: 'center',
+                background: 'rgba(255,255,255,0.5)', border: '2px dashed rgba(139,92,246,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <PlusIcon size={16} color="#9CA3AF" />
+              <PlusIcon size={16} color="#A78BFA" />
             </motion.div>
           </div>
         </div>
 
         {/* Bottom spacing for nav */}
         <div style={{ height: '1rem' }} />
+      </div>
       </div>
     </div>
   )
