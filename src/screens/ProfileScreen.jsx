@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
 import { getCharacter } from '../data/characters'
-import GlassCard, { GlassButton } from '../components/GlassCard'
 import {
   UserIcon, SettingsIcon, LogoutIcon, StarIcon,
   VoiceOnIcon, VoiceOffIcon, RefreshIcon, ShieldIcon,
@@ -15,8 +14,8 @@ const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 export default function ProfileScreen({ navigate }) {
   const {
     childName, selectedCharacter, level, xp, stars, badges,
-    voiceEnabled, setVoiceEnabled, resetProgress,
-    totalStoriesRead, totalMissionsCompleted,
+    voiceEnabled, setVoiceEnabled, speechRate, setSpeechRate, resetProgress,
+    totalStoriesRead, totalMissionsCompleted, gear,
   } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const { logout, isGuest, parentEmail } = useAuthStore()
@@ -38,42 +37,36 @@ export default function ProfileScreen({ navigate }) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden"
-      style={{ background: '#0a0a1a' }}>
-
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
       {/* Header */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between shrink-0">
-        <h1 style={{
-          fontFamily: "'Baloo 2', cursive", fontWeight: 700,
-          fontSize: '1.3rem', color: 'white',
-        }}>
+      <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0 }}>
           Profile
         </h1>
         <motion.button
           onClick={handleLogout}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.4rem 0.8rem', borderRadius: '9999px',
-            background: 'rgba(255,75,75,0.1)', border: '1px solid rgba(255,75,75,0.2)',
-            cursor: 'pointer',
-          }}
           whileTap={{ scale: 0.95 }}
-        >
-          <LogoutIcon size={16} color="#ff6b6b" />
-          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: '#ff6b6b' }}>
-            Log Out
-          </span>
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 12px', borderRadius: '9999px',
+            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
+            cursor: 'pointer',
+          }}>
+          <LogoutIcon size={14} color="#EF4444" />
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: '#EF4444' }}>Log Out</span>
         </motion.button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem 1.5rem', WebkitOverflowScrolling: 'touch' }}>
         {/* Profile card */}
-        <GlassCard style={{ padding: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ marginBottom: '0.75rem' }}
-          >
+        <div style={{
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+          borderRadius: '1.5rem', padding: '1.25rem', textAlign: 'center',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: '0.75rem',
+        }}>
+          <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ marginBottom: '0.75rem' }}>
             <div style={{
               width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto',
               border: `3px solid ${character.color}40`,
@@ -83,197 +76,135 @@ export default function ProfileScreen({ navigate }) {
             </div>
           </motion.div>
 
-          <h2 style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.4rem',
-            color: 'white', margin: 0,
-          }}>
+          <h2 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.3rem', color: '#1F2937', margin: 0 }}>
             {childName || 'Explorer'}
           </h2>
-          <p style={{
-            fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem',
-            color: 'rgba(255,255,255,0.4)', margin: '0.15rem 0 0.75rem',
-          }}>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0.75rem' }}>
             Traveling with {character.name}
           </p>
 
           {/* Level & XP bar */}
-          <div style={{
-            background: 'rgba(255,255,255,0.05)', borderRadius: '12px',
-            padding: '0.6rem 0.8rem', marginBottom: '0.5rem',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#7c5aff' }}>
-                Level {level}
-              </span>
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+          <div style={{ background: 'rgba(0,0,0,0.03)', borderRadius: '12px', padding: '0.6rem 0.8rem', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#8B5CF6' }}>Level {level}</span>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#9CA3AF' }}>
                 {xp - currentLevelXP} / {nextLevelXP - currentLevelXP} XP
               </span>
             </div>
-            <div style={{
-              height: '8px', borderRadius: '4px', overflow: 'hidden',
-              background: 'rgba(255,255,255,0.08)',
-            }}>
-              <motion.div
-                style={{
-                  height: '100%', borderRadius: '4px',
-                  background: 'linear-gradient(90deg, #7c5aff, #a78bfa)',
-                  boxShadow: '0 0 8px rgba(124,90,255,0.3)',
-                }}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress * 100}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
+            <div style={{ height: '8px', borderRadius: '4px', overflow: 'hidden', background: 'rgba(0,0,0,0.06)' }}>
+              <motion.div style={{ height: '100%', borderRadius: '4px', background: 'linear-gradient(90deg, #8B5CF6, #A78BFA)' }}
+                initial={{ width: 0 }} animate={{ width: `${progress * 100}%` }} transition={{ duration: 0.8 }} />
             </div>
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             {[
-              { icon: <BoltIcon size={16} color="#ffc800" />, value: xp, label: 'XP' },
-              { icon: <StarIcon size={16} color="#ffc800" />, value: stars, label: 'Stars' },
-              { icon: <TrophyIcon size={16} color="#7c5aff" />, value: badges.length, label: 'Badges' },
+              { icon: <BoltIcon size={14} color="#F59E0B" />, value: xp, label: 'XP' },
+              { icon: <StarIcon size={14} color="#F59E0B" />, value: stars, label: 'Stars' },
+              { icon: <TrophyIcon size={14} color="#8B5CF6" />, value: badges.length, label: 'Badges' },
             ].map((stat, i) => (
               <div key={i} style={{
                 flex: 1, borderRadius: '12px', padding: '0.5rem',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)',
                 textAlign: 'center',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.2rem' }}>
-                  {stat.icon}
-                </div>
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.1rem', fontWeight: 700, color: 'white', margin: 0, lineHeight: 1 }}>
-                  {stat.value}
-                </p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-                  {stat.label}
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2px' }}>{stat.icon}</div>
+                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#1F2937', margin: 0, lineHeight: 1 }}>{stat.value}</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: '#9CA3AF', margin: 0 }}>{stat.label}</p>
               </div>
             ))}
           </div>
-        </GlassCard>
+        </div>
 
-        {/* Activity stats */}
-        <GlassCard variant="dark" style={{ padding: '1rem', marginBottom: '1rem' }}>
-          <h3 style={{
-            fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700,
-            color: 'rgba(255,255,255,0.6)', marginBottom: '0.75rem',
-          }}>
-            Activity
-          </h3>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <div style={{
-              flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.6rem', borderRadius: '12px', background: 'rgba(0,230,118,0.08)',
-            }}>
-              <BookIcon size={18} color="#00e676" />
-              <div>
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#00e676', margin: 0, lineHeight: 1 }}>
-                  {totalStoriesRead}
-                </p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-                  Stories Read
-                </p>
-              </div>
-            </div>
-            <div style={{
-              flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.6rem', borderRadius: '12px', background: 'rgba(124,90,255,0.08)',
-            }}>
-              <CompassIcon size={18} color="#7c5aff" />
-              <div>
-                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#7c5aff', margin: 0, lineHeight: 1 }}>
-                  {totalMissionsCompleted}
-                </p>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-                  Missions Done
-                </p>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Settings */}
-        <GlassCard variant="dark" style={{ padding: '1rem', marginBottom: '1rem' }}>
-          <h3 style={{
-            fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700,
-            color: 'rgba(255,255,255,0.6)', marginBottom: '0.75rem',
-          }}>
+        {/* Settings section */}
+        <div style={{
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+          borderRadius: '1.5rem', padding: '1rem',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: '0.75rem',
+        }}>
+          <h3 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700, color: '#4A5568', margin: '0 0 0.75rem' }}>
             Settings
           </h3>
 
           {/* Voice toggle */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0.65rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              {voiceEnabled
-                ? <VoiceOnIcon size={18} color="rgba(255,255,255,0.6)" />
-                : <VoiceOffIcon size={18} color="rgba(255,255,255,0.4)" />
-              }
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
-                Voice Narration
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {voiceEnabled ? <VoiceOnIcon size={18} color="#6B7280" /> : <VoiceOffIcon size={18} color="#9CA3AF" />}
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Voice Narration</span>
             </div>
             <motion.button
               onClick={() => setVoiceEnabled(!voiceEnabled)}
-              style={{
-                width: '44px', height: '24px', borderRadius: '12px', border: 'none',
-                background: voiceEnabled ? '#7c5aff' : 'rgba(255,255,255,0.15)',
-                position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
-              }}
+              className={`toggle-switch ${voiceEnabled ? 'on' : 'off'}`}
               whileTap={{ scale: 0.95 }}
             >
-              <motion.div
-                style={{
-                  width: '20px', height: '20px', borderRadius: '50%', background: 'white',
-                  position: 'absolute', top: '2px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                }}
+              <motion.div className="toggle-knob"
                 animate={{ left: voiceEnabled ? '22px' : '2px' }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             </motion.button>
           </div>
-        </GlassCard>
 
-        {/* Parent controls */}
-        {!isGuest && (
-          <GlassCard variant="dark" style={{ padding: '1rem', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <ShieldIcon size={16} color="rgba(255,255,255,0.5)" />
-              <h3 style={{
-                fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700,
-                color: 'rgba(255,255,255,0.6)', margin: 0,
-              }}>
-                Parent Controls
-              </h3>
+          {/* Sound effects toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Sound Effects</span>
             </div>
+            <motion.button
+              onClick={() => {}}
+              className="toggle-switch on"
+              whileTap={{ scale: 0.95 }}
+            >
+              <motion.div className="toggle-knob"
+                animate={{ left: '22px' }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              />
+            </motion.button>
+          </div>
 
-            <p style={{
-              fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem',
-              color: 'rgba(255,255,255,0.4)', margin: '0 0 0.75rem',
-            }}>
+          {/* Story speed slider */}
+          <div style={{ padding: '0.5rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: '#4A5568' }}>Story Speed</span>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: '#8B5CF6' }}>{speechRate}x</span>
+            </div>
+            <input type="range" min="0.5" max="1.5" step="0.1" value={speechRate}
+              onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+              style={{ width: '100%', accentColor: '#8B5CF6', height: '4px' }}
+            />
+          </div>
+        </div>
+
+        {/* Reset progress */}
+        {!isGuest && (
+          <div style={{
+            backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+            background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+            borderRadius: '1.5rem', padding: '1rem',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: '0.75rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.5rem' }}>
+              <ShieldIcon size={14} color="#6B7280" />
+              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#4A5568' }}>Parent Controls</span>
+            </div>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', color: '#9CA3AF', margin: '0 0 0.75rem' }}>
               Signed in as {parentEmail}
             </p>
-
             <motion.button
               onClick={() => setShowResetConfirm(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.65rem 0.8rem', borderRadius: '12px',
-                background: 'rgba(255,150,0,0.08)', border: '1px solid rgba(255,150,0,0.15)',
-                cursor: 'pointer', width: '100%',
-              }}
               whileTap={{ scale: 0.98 }}
-            >
-              <RefreshIcon size={16} color="#ff9600" />
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#ff9600' }}>
-                Reset All Progress
-              </span>
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '0.65rem 0.8rem', borderRadius: '12px',
+                background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)',
+                cursor: 'pointer', width: '100%',
+              }}>
+              <RefreshIcon size={16} color="#EF4444" />
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#EF4444' }}>Reset Progress</span>
             </motion.button>
-          </GlassCard>
+          </div>
         )}
       </div>
 
@@ -281,57 +212,32 @@ export default function ProfileScreen({ navigate }) {
       <AnimatePresence>
         {showResetConfirm && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'absolute', inset: 0, zIndex: 200,
-                background: 'rgba(0,0,0,0.7)',
-                backdropFilter: 'blur(8px)',
-              }}
-              onClick={() => setShowResetConfirm(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
+              onClick={() => setShowResetConfirm(false)} />
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
               style={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 zIndex: 201, width: '85%', maxWidth: '360px',
-                backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-                background: 'rgba(20,20,40,0.95)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '1.5rem', padding: '1.5rem',
-                textAlign: 'center',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-              }}
-            >
+                background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.06)',
+                borderRadius: '1.5rem', padding: '1.5rem', textAlign: 'center',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+              }}>
               <div style={{
                 width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 0.75rem',
-                background: 'rgba(255,75,75,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(239,68,68,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <RefreshIcon size={24} color="#ff6b6b" />
+                <RefreshIcon size={24} color="#EF4444" />
               </div>
-              <h3 style={{
-                fontFamily: "'Baloo 2', cursive", fontSize: '1.2rem',
-                fontWeight: 700, color: 'white', margin: '0 0 0.5rem',
-              }}>
+              <h3 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.2rem', fontWeight: 700, color: '#1F2937', margin: '0 0 0.5rem' }}>
                 Reset Progress?
               </h3>
-              <p style={{
-                fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem',
-                color: 'rgba(255,255,255,0.5)', margin: '0 0 1.25rem',
-              }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', color: '#6B7280', margin: '0 0 1.25rem' }}>
                 This will erase all XP, badges, stories, and missions. This cannot be undone.
               </p>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <GlassButton variant="glass" onClick={() => setShowResetConfirm(false)} style={{ flex: 1 }}>
-                  Cancel
-                </GlassButton>
-                <GlassButton variant="danger" onClick={handleReset} style={{ flex: 1 }}>
-                  Reset
-                </GlassButton>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="btn btn-glass" onClick={() => setShowResetConfirm(false)} style={{ flex: 1 }}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleReset} style={{ flex: 1 }}>Reset</button>
               </div>
             </motion.div>
           </>

@@ -4,17 +4,25 @@ import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { generateStoryPart } from '../utils/storyGen'
 import { speak, stopSpeaking, listen, isSpeechSupported } from '../utils/voice'
-import { GlassButton } from '../components/GlassCard'
 import { BackArrowIcon, CloseIcon, MicIcon, CheckIcon, SparkleIcon } from '../components/SVGIcons'
 
 const themes = [
-  { id: 'bravery', label: 'Being Brave', color: '#ff9600', prompt: 'a little animal who was afraid but learned to be brave' },
-  { id: 'kindness', label: 'Kindness', color: '#ff6b9d', prompt: 'a character who helped someone and made a new friend' },
-  { id: 'sharing', label: 'Sharing', color: '#00e676', prompt: 'two friends who learned that sharing makes everything better' },
-  { id: 'honesty', label: 'Honesty', color: '#ffc800', prompt: 'a little one who told the truth even when it was hard' },
-  { id: 'trying', label: 'Never Give Up', color: '#1cb0f6', prompt: 'a small character who kept trying and finally succeeded' },
-  { id: 'friendship', label: 'Friendship', color: '#7c5aff', prompt: 'two very different animals who became best friends' },
+  { id: 'bravery', label: 'Being Brave', color: '#F59E0B', bg: '#FEF3C7' },
+  { id: 'kindness', label: 'Kindness', color: '#EC4899', bg: '#FCE7F3' },
+  { id: 'sharing', label: 'Sharing', color: '#10B981', bg: '#D1FAE5' },
+  { id: 'honesty', label: 'Honesty', color: '#F59E0B', bg: '#FEF3C7' },
+  { id: 'trying', label: 'Never Give Up', color: '#3B82F6', bg: '#DBEAFE' },
+  { id: 'friendship', label: 'Friendship', color: '#8B5CF6', bg: '#EDE9FE' },
 ]
+
+const themePrompts = {
+  bravery: 'a little animal who was afraid but learned to be brave',
+  kindness: 'a character who helped someone and made a new friend',
+  sharing: 'two friends who learned that sharing makes everything better',
+  honesty: 'a little one who told the truth even when it was hard',
+  trying: 'a small character who kept trying and finally succeeded',
+  friendship: 'two very different animals who became best friends',
+}
 
 export default function AIStoryScreen({ navigate }) {
   const { selectedCharacter, childName, addXP, addBadge } = useGameStore()
@@ -37,7 +45,7 @@ export default function AIStoryScreen({ navigate }) {
     const story = await generateStoryPart({
       character: selectedCharacter,
       childName,
-      prompt: `Tell a short story (4-5 sentences) about ${theme.prompt}. End with a question for ${childName} about the story.`,
+      prompt: `Tell a short story (4-5 sentences) about ${themePrompts[theme.id]}. End with a question for ${childName} about the story.`,
     })
 
     if (story) {
@@ -115,31 +123,29 @@ export default function AIStoryScreen({ navigate }) {
   // Pick theme screen
   if (phase === 'pick') {
     return (
-      <div className="w-full h-full flex flex-col overflow-hidden bg-stars" style={{ background: '#0a0a1a' }}>
-        <div className="px-4 pt-3 pb-2 flex items-center gap-3 shrink-0">
-          <motion.button
-            onClick={() => navigate('story')}
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{
-              backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <BackArrowIcon size={18} color="rgba(255,255,255,0.7)" />
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
+        <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <motion.button onClick={() => navigate('story')}
+            style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
+            whileTap={{ scale: 0.9 }}>
+            <BackArrowIcon size={16} color="#6B7280" />
           </motion.button>
-          <h1 className="font-display text-xl font-bold text-white">Create a Story</h1>
-          <SparkleIcon size={18} color="#c4b0ff" />
+          <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0, flex: 1 }}>Create a Story</h1>
+          <SparkleIcon size={18} color="#8B5CF6" />
         </div>
 
         {/* Character guide */}
-        <div className="px-4 mb-4 shrink-0">
-          <div className="speech-bubble flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `${character.color}15` }}>
-              <img src={character.image} alt={character.name} className="w-8 h-8 rounded-full object-cover" style={{ border: `2px solid ${character.color}40` }} />
+        <div style={{ padding: '0 1rem', marginBottom: '1rem', flexShrink: 0 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.7)',
+            border: '1px solid rgba(255,255,255,0.5)', borderRadius: '1.25rem',
+            padding: '0.75rem 1rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}40` }}>
+              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
-            <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#4A5568' }}>
               {character.id === 'bunny' ? `OH OH OH ${childName}! Pick a theme and I'll make up a story JUST for you!!` :
                character.id === 'bear' ? `Hey ${childName}! Pick what kind of adventure you want -- I'll tell you the story!` :
                `Choose a theme, ${childName}, and I shall weave a tale just for you.`}
@@ -148,29 +154,26 @@ export default function AIStoryScreen({ navigate }) {
         </div>
 
         {/* Theme grid */}
-        <div className="flex-1 overflow-y-auto px-4 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem 1.5rem', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {themes.map((theme, i) => (
-              <motion.button
-                key={theme.id}
-                initial={{ scale: 0, rotate: -5 }}
-                animate={{ scale: 1, rotate: 0 }}
+              <motion.button key={theme.id}
+                initial={{ scale: 0, rotate: -5 }} animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.05 + i * 0.06, type: 'spring', stiffness: 300 }}
                 onClick={() => handleGenerate(theme)}
-                className="rounded-2xl p-4 flex flex-col items-center gap-2.5"
-                style={{
-                  backdropFilter: 'blur(16px)',
-                  background: `${theme.color}08`,
-                  border: `1px solid ${theme.color}20`,
-                  boxShadow: `0 8px 24px ${theme.color}08`,
-                }}
                 whileTap={{ scale: 0.97 }}
-              >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center"
-                  style={{ background: `${theme.color}12`, border: `1px solid ${theme.color}20` }}>
-                  <SparkleIcon size={24} color={theme.color} />
+                style={{
+                  borderRadius: '20px', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                  background: 'white', border: '1px solid rgba(0,0,0,0.04)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)', cursor: 'pointer',
+                }}>
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '14px',
+                  background: theme.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <SparkleIcon size={22} color={theme.color} />
                 </div>
-                <span className="font-display font-bold text-sm text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>{theme.label}</span>
+                <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: '#1F2937' }}>{theme.label}</span>
               </motion.button>
             ))}
           </div>
@@ -182,33 +185,22 @@ export default function AIStoryScreen({ navigate }) {
   // Generating
   if (phase === 'generating') {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center px-6 bg-stars" style={{ background: '#0a0a1a' }}>
-        <motion.div
-          className="mb-6"
-          animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <div className="w-24 h-24 rounded-full flex items-center justify-center"
-            style={{
-              background: `${character.color}20`,
-              border: `2px solid ${character.color}30`,
-              boxShadow: `0 8px 32px ${character.color}15`,
-              backdropFilter: 'blur(16px)',
-            }}>
-            <img src={character.image} alt={character.name} style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
+      <div className="w-full h-full flex flex-col items-center justify-center px-6" style={{ background: '#F8F9FA' }}>
+        <motion.div animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+          <div style={{
+            width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden',
+            border: `2px solid ${character.color}40`, boxShadow: `0 8px 32px ${character.color}15`,
+            marginBottom: '1.5rem',
+          }}>
+            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </motion.div>
-        <p className="font-display text-xl font-bold text-white mb-2">Creating your story...</p>
-        <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>{character.name} is thinking of something special</p>
-        <div className="mt-5 flex gap-2">
+        <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.2rem', fontWeight: 700, color: '#1F2937', marginBottom: '4px' }}>Creating your story...</p>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', color: '#9CA3AF' }}>{character.name} is thinking of something special</p>
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '8px' }}>
           {[0,1,2].map(i => (
-            <motion.div
-              key={i}
-              className="w-3 h-3 rounded-full"
-              style={{ background: '#7c5aff' }}
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-            />
+            <motion.div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#8B5CF6' }}
+              animate={{ y: [0, -12, 0] }} transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }} />
           ))}
         </div>
       </div>
@@ -218,42 +210,31 @@ export default function AIStoryScreen({ navigate }) {
   // Done
   if (phase === 'done') {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center px-6 bg-stars"
-        style={{ background: 'linear-gradient(180deg, #0a1a0f 0%, #0a0a1a 100%)' }}>
-        {/* Sparkles */}
+      <div className="w-full h-full flex flex-col items-center justify-center px-6" style={{ background: '#F8F9FA' }}>
         {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute"
+          <motion.div key={i} className="absolute"
             style={{ left: `${15 + Math.random() * 70}%`, top: `${20 + Math.random() * 40}%` }}
             animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
-            transition={{ duration: 1.5, delay: i * 0.2, repeat: Infinity }}
-          >
-            <SparkleIcon size={10 + Math.random() * 6} color="#ffc800" />
+            transition={{ duration: 1.5, delay: i * 0.2, repeat: Infinity }}>
+            <SparkleIcon size={10 + Math.random() * 6} color="#FBBF24" />
           </motion.div>
         ))}
-
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-center relative z-10">
-          <motion.div
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-            style={{
-              background: 'linear-gradient(145deg, #7c5aff, #6a4eff)',
-              boxShadow: '0 8px 32px rgba(124,90,255,0.3), 0 0 50px rgba(124,90,255,0.15)',
-            }}
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 1, repeat: 2 }}
-          >
-            <SparkleIcon size={36} color="#ffc800" />
+          <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 1, repeat: 2 }}>
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%', margin: '0 auto 1rem',
+              background: 'linear-gradient(145deg, #8B5CF6, #7C3AED)',
+              boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <SparkleIcon size={32} color="#FBBF24" />
+            </div>
           </motion.div>
-          <h2 className="font-display text-2xl font-bold text-white mb-1">GREAT STORY!</h2>
-          <p className="mb-6 font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>+20 XP earned!</p>
-          <div className="flex flex-col gap-3 w-full max-w-xs">
-            <GlassButton variant="primary" onClick={() => { setPhase('pick'); setStoryText('') }}>
-              ANOTHER STORY
-            </GlassButton>
-            <GlassButton variant="glass" onClick={() => navigate('home')}>
-              BACK HOME
-            </GlassButton>
+          <h2 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1F2937', margin: '0 0 4px' }}>GREAT STORY!</h2>
+          <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: '#6B7280', fontFamily: "'Nunito', sans-serif" }}>+20 XP earned!</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '300px' }}>
+            <button className="btn btn-primary" onClick={() => { setPhase('pick'); setStoryText('') }}>ANOTHER STORY</button>
+            <button className="btn btn-glass" onClick={() => navigate('home')}>BACK HOME</button>
           </div>
         </motion.div>
       </div>
@@ -262,108 +243,82 @@ export default function AIStoryScreen({ navigate }) {
 
   // Reading / Question / Listening / Reacting
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0a0a1a' }}>
-      {/* Top */}
-      <div className="px-4 pt-3 pb-2 flex items-center gap-3 shrink-0">
-        <motion.button
-          onClick={() => setPhase('pick')}
-          className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{
-            backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <CloseIcon size={14} color="rgba(255,255,255,0.5)" />
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
+      <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <motion.button onClick={() => setPhase('pick')}
+          style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
+          whileTap={{ scale: 0.9 }}>
+          <CloseIcon size={14} color="#6B7280" />
         </motion.button>
-        <h2 className="font-display text-sm font-bold text-white flex-1 truncate">
+        <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: '#1F2937', margin: 0, flex: 1 }}>
           {selectedTheme?.label}
-        </h2>
+        </p>
       </div>
 
-      {/* Story + character */}
-      <div className="flex-1 overflow-y-auto px-5">
-        <div className="flex items-start gap-3 mb-4">
-          <motion.div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-1"
-            style={{
-              background: `${character.color}15`,
-              border: `2px solid ${character.color}25`,
-              backdropFilter: 'blur(16px)',
-            }}
-            animate={phase === 'reading' ? { y: [0, -4, 0] } : {}}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          >
-            <img src={character.image} alt={character.name} style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
+      <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '1rem' }}>
+          <motion.div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}40` }}
+            animate={phase === 'reading' ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.5, repeat: Infinity }}>
+            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </motion.div>
-          <div className="speech-bubble flex-1">
-            <p className="text-base leading-relaxed font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+          <div style={{
+            flex: 1, backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.7)',
+            border: '1px solid rgba(255,255,255,0.5)', borderRadius: '1.25rem',
+            padding: '0.75rem 1rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', lineHeight: 1.6, fontWeight: 600, color: '#1F2937', margin: 0 }}>
               {displayedText || storyText}
-              {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ color: 'rgba(124,90,255,0.5)' }}>|</motion.span>}
+              {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ color: 'rgba(139,92,246,0.5)' }}>|</motion.span>}
             </p>
           </div>
         </div>
 
-        {/* Reaction */}
         <AnimatePresence>
           {phase === 'reacting' && reaction && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="ml-14">
-              <div className="rounded-xl p-3 flex items-center gap-2.5"
-                style={{
-                  backdropFilter: 'blur(16px)',
-                  background: 'rgba(0,230,118,0.1)',
-                  border: '1px solid rgba(0,230,118,0.2)',
-                  boxShadow: '0 4px 16px rgba(0,230,118,0.1)',
-                }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,230,118,0.15)' }}>
-                  <CheckIcon size={14} color="#00e676" />
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0.8, opacity: 0 }} style={{ marginLeft: '46px' }}>
+              <div style={{
+                borderRadius: '1rem', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)',
+              }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckIcon size={12} color="#10B981" />
                 </div>
-                <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{reaction}</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: '0.85rem', color: '#4A5568', margin: 0 }}>{reaction}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Bottom actions */}
-      <div className="shrink-0 p-4 safe-bottom" style={{ background: '#0a0a1a', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '0.75rem 1rem 1rem', flexShrink: 0, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
         {phase === 'question' && question && (
           <div>
-            <p className="font-display text-base font-bold text-white mb-3">{question}</p>
-            <div className="flex gap-2">
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.95rem', fontWeight: 700, color: '#1F2937', marginBottom: '10px' }}>{question}</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
               {isSpeechSupported() && (
-                <GlassButton variant="primary" onClick={handleVoiceAnswer} style={{ flex: 1 }}>
-                  <MicIcon size={18} color="white" />
-                  SPEAK
-                </GlassButton>
+                <button className="btn btn-primary" onClick={handleVoiceAnswer} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <MicIcon size={16} color="white" /> SPEAK
+                </button>
               )}
-              <GlassButton variant="glass" onClick={() => handleAnswer('(Great story!)')} style={{ flex: 1 }}>
-                SKIP
-              </GlassButton>
+              <button className="btn btn-glass" onClick={() => handleAnswer('(Great story!)')} style={{ flex: 1 }}>SKIP</button>
             </div>
           </div>
         )}
         {phase === 'listening' && (
-          <div className="text-center">
-            <motion.div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2"
+          <div style={{ textAlign: 'center' }}>
+            <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.8, repeat: Infinity }}
               style={{
-                background: 'rgba(124,90,255,0.15)',
-                border: '2px solid rgba(124,90,255,0.3)',
-                boxShadow: '0 0 24px rgba(124,90,255,0.2)',
-              }}
-              animate={{ scale: [1, 1.12, 1] }}
-              transition={{ duration: 0.8, repeat: Infinity }}
-            >
-              <MicIcon size={24} color="#c4b0ff" />
+                width: '56px', height: '56px', borderRadius: '50%', margin: '0 auto 8px',
+                background: 'rgba(139,92,246,0.1)', border: '2px solid rgba(139,92,246,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+              <MicIcon size={22} color="#8B5CF6" />
             </motion.div>
-            <p className="text-white font-bold font-display">Listening...</p>
+            <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, color: '#1F2937' }}>Listening...</p>
           </div>
         )}
         {phase === 'reading' && !isTyping && (
-          <GlassButton variant="glass" onClick={() => stopSpeaking()}>
-            SKIP AHEAD
-          </GlassButton>
+          <button className="btn btn-glass" onClick={() => stopSpeaking()} style={{ maxWidth: '100%' }}>SKIP AHEAD</button>
         )}
       </div>
     </div>

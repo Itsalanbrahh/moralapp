@@ -3,7 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { characters } from '../data/characters'
 import { speak } from '../utils/voice'
-import GlassCard, { GlassButton, GlassInput } from '../components/GlassCard'
+import { StarIcon, ChevronRightIcon, SparkleIcon } from '../components/SVGIcons'
+
+const guideGradients = {
+  owl: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
+  bear: 'linear-gradient(135deg, #F59E0B, #F97316)',
+  bunny: 'linear-gradient(135deg, #EC4899, #FBCFE8)',
+}
+
+function FloatingStar({ x, y, size, delay }) {
+  return (
+    <motion.div
+      style={{ position: 'absolute', left: x, top: y }}
+      animate={{ opacity: [0.2, 0.6, 0.2], scale: [0.8, 1, 0.8], rotate: [0, 180, 360] }}
+      transition={{ duration: 3 + Math.random() * 2, delay, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      <SparkleIcon size={size} color="rgba(255,200,0,0.5)" />
+    </motion.div>
+  )
+}
 
 export default function CharacterSelect({ navigate }) {
   const [step, setStep] = useState('name')
@@ -33,157 +51,182 @@ export default function CharacterSelect({ navigate }) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col" style={{ background: '#0a0a1a' }}>
-      {/* Progress bar */}
-      <div className="px-5 pt-4">
-        <div style={{
-          height: '10px', borderRadius: '5px', overflow: 'hidden',
-          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <motion.div style={{
-            height: '100%', borderRadius: '5px',
-            background: 'linear-gradient(90deg, #7c5aff, #a78bfa)',
-            boxShadow: '0 0 8px rgba(124,90,255,0.3)',
-          }}
-            animate={{ width: step === 'name' ? '50%' : '100%' }} />
-        </div>
-      </div>
+    <div className="w-full h-full flex flex-col items-center px-5 py-10 overflow-y-auto" style={{
+      background: 'linear-gradient(180deg, #E8D5F5 0%, #F5D5C8 100%)',
+      position: 'relative',
+    }}>
+      <FloatingStar x="10%" y="10%" size={10} delay={0} />
+      <FloatingStar x="85%" y="15%" size={12} delay={0.5} />
+      <FloatingStar x="5%" y="45%" size={8} delay={1} />
+      <FloatingStar x="90%" y="40%" size={10} delay={1.5} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {step === 'name' ? (
+      <AnimatePresence mode="wait">
+        {step === 'name' ? (
+          <motion.div
+            key="name"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="w-full max-w-sm flex flex-col items-center justify-center flex-1"
+          >
+            {/* Owl mascot */}
             <motion.div
-              key="name"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              className="w-full max-w-sm flex flex-col items-center"
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="mb-5"
             >
-              <motion.div
-                className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4"
-                style={{
-                  border: '3px solid rgba(124,90,255,0.3)',
-                  boxShadow: '0 8px 24px rgba(124,90,255,0.2)',
-                }}
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <img src="/assets/characters/owl.png" alt="Owl" className="w-full h-full object-cover" />
-              </motion.div>
-
-              <GlassCard style={{ padding: '1.25rem', marginBottom: '2rem', textAlign: 'center' }}>
-                <p style={{
-                  fontFamily: "'Baloo 2', cursive", fontWeight: 700,
-                  fontSize: '1.25rem', color: 'rgba(255,255,255,0.9)',
-                }}>
-                  Hi there! What's your name?
-                </p>
-              </GlassCard>
-
-              <GlassInput
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
-                placeholder="Type your name..."
-                autoFocus
-                maxLength={20}
-                style={{ textAlign: 'center', marginBottom: '1.5rem' }}
-              />
-
-              <GlassButton
-                variant="primary"
-                onClick={handleNameSubmit}
-                disabled={name.trim().length === 0}
-              >
-                Continue
-              </GlassButton>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="character"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              className="w-full max-w-sm flex flex-col items-center"
-            >
-              <motion.div
-                className="w-14 h-14 rounded-full overflow-hidden mx-auto mb-3"
-                style={{
-                  border: '2px solid rgba(124,90,255,0.3)',
-                  boxShadow: '0 6px 16px rgba(124,90,255,0.15)',
-                }}
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <img src="/assets/characters/owl.png" alt="Owl" className="w-full h-full object-cover" />
-              </motion.div>
-
-              <GlassCard style={{ padding: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-                <p style={{
-                  fontFamily: "'Baloo 2', cursive", fontWeight: 700,
-                  fontSize: '1.1rem', color: 'rgba(255,255,255,0.9)',
-                }}>
-                  {name}, pick your buddy!
-                </p>
-              </GlassCard>
-
-              {/* Character cards */}
-              <div className="flex gap-3 mb-6 w-full justify-center">
-                {Object.values(characters).map((char, i) => (
-                  <motion.button
-                    key={char.id}
-                    initial={{ scale: 0, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    transition={{ delay: i * 0.1, type: 'spring', stiffness: 300 }}
-                    onClick={() => handleSelectCharacter(char.id)}
-                    className="flex flex-col items-center p-3 rounded-2xl transition-all"
-                    style={{
-                      width: '5.5rem',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      background: selected === char.id ? `${char.color}18` : 'rgba(255,255,255,0.05)',
-                      border: `2px solid ${selected === char.id ? `${char.color}60` : 'rgba(255,255,255,0.08)'}`,
-                      boxShadow: selected === char.id ? `0 4px 20px ${char.color}20` : 'none',
-                    }}
-                  >
-                    <div className="w-14 h-14 rounded-xl overflow-hidden mb-1.5"
-                      style={{
-                        border: `2px solid ${char.color}40`,
-                        boxShadow: `0 4px 12px ${char.color}15`,
-                      }}>
-                      <img src={char.image} alt={char.name} className="w-full h-full object-cover" />
-                    </div>
-                    <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)' }}>{char.name}</span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{char.title}</span>
-                  </motion.button>
-                ))}
+              <div style={{
+                width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden',
+                border: '3px solid rgba(139,92,246,0.3)',
+                boxShadow: '0 8px 24px rgba(139,92,246,0.2)',
+              }}>
+                <img src="/assets/characters/owl.png" alt="Owl" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-
-              {selected && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <GlassCard style={{ padding: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-                    <p style={{ fontFamily: "'Nunito', sans-serif", color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
-                      "{characters[selected].greeting}"
-                    </p>
-                  </GlassCard>
-                </motion.div>
-              )}
-
-              <GlassButton
-                variant="primary"
-                onClick={handleConfirm}
-                disabled={!selected}
-              >
-                {selected ? `Let's go with ${characters[selected].name}!` : 'Pick a buddy first'}
-              </GlassButton>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+
+            {/* Glass card question */}
+            <div style={{
+              backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+              background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+              borderRadius: '1.5rem', padding: '1.25rem', marginBottom: '1.5rem',
+              textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%',
+            }}>
+              <p style={{
+                fontFamily: "'Baloo 2', cursive", fontWeight: 700,
+                fontSize: '1.25rem', color: '#1F2937',
+              }}>
+                Hi there! What's your name?
+              </p>
+            </div>
+
+            {/* Input */}
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+              placeholder="Type your name..."
+              autoFocus
+              maxLength={20}
+              className="glass-input"
+              style={{ textAlign: 'center', marginBottom: '1.5rem' }}
+            />
+
+            <button
+              className="btn btn-primary"
+              onClick={handleNameSubmit}
+              disabled={name.trim().length === 0}
+              style={{ opacity: name.trim().length === 0 ? 0.4 : 1 }}
+            >
+              Continue
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="character"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="w-full max-w-sm flex flex-col items-center flex-1"
+          >
+            {/* Logo */}
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4 mt-2">
+              <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '2rem', lineHeight: 1.1 }}>
+                <span style={{ color: '#8B5CF6' }}>Build</span>
+                <span style={{ color: '#3B82F6' }}>Moral</span>
+              </h1>
+            </motion.div>
+
+            {/* Choose your guide */}
+            <div className="text-center mb-4">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <StarIcon size={12} color="#FBBF24" />
+                <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1rem', color: '#4A5568' }}>
+                  {name}, pick your guide!
+                </span>
+                <StarIcon size={12} color="#FBBF24" />
+              </div>
+            </div>
+
+            {/* Character cards */}
+            <div className="flex flex-col gap-3 w-full mb-5">
+              {Object.values(characters).map((char, i) => (
+                <motion.button
+                  key={char.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, type: 'spring', stiffness: 300 }}
+                  onClick={() => handleSelectCharacter(char.id)}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    display: 'flex', alignItems: 'center',
+                    background: selected === char.id ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.7)',
+                    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                    borderRadius: '30px',
+                    border: selected === char.id ? `2px solid ${char.color}60` : '2px solid rgba(255,255,255,0.5)',
+                    boxShadow: selected === char.id ? `0 4px 24px ${char.color}20` : '0 4px 24px rgba(0,0,0,0.08)',
+                    overflow: 'hidden', padding: 0, cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <div style={{
+                    width: '90px', height: '90px',
+                    background: guideGradients[char.id] || guideGradients.owl,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, borderRadius: '30px 0 0 30px',
+                  }}>
+                    <motion.img
+                      src={char.image} alt={char.name}
+                      style={{ width: '65px', height: '65px', objectFit: 'contain' }}
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, padding: '0.75rem 0.75rem 0.75rem 1rem' }}>
+                    <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0, lineHeight: 1.2 }}>
+                      {char.name}
+                    </p>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>
+                      {char.title}
+                    </p>
+                  </div>
+                  <div style={{ paddingRight: '1rem', flexShrink: 0 }}>
+                    <ChevronRightIcon size={20} color="#9CA3AF" />
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Selected character greeting */}
+            {selected && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full mb-4"
+              >
+                <div style={{
+                  backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                  background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+                  borderRadius: '1.25rem', padding: '0.75rem 1rem', textAlign: 'center',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+                }}>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", color: '#6B7280', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                    "{characters[selected].greeting}"
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            <button
+              className="btn btn-primary"
+              onClick={handleConfirm}
+              disabled={!selected}
+              style={{ opacity: selected ? 1 : 0.4 }}
+            >
+              {selected ? `Let's go with ${characters[selected].name}!` : 'Pick a guide first'}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

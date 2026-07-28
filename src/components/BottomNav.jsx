@@ -9,6 +9,14 @@ const tabs = [
   { id: 'profile', label: 'Profile', Icon: UserIcon },
 ]
 
+const activeColors = {
+  home: '#8B5CF6',
+  story: '#8B5CF6',
+  mission: '#10B981',
+  house: '#3B82F6',
+  profile: '#8B5CF6',
+}
+
 export default function BottomNav({ activeTab, onTabChange }) {
   return (
     <div style={{
@@ -19,8 +27,8 @@ export default function BottomNav({ activeTab, onTabChange }) {
       zIndex: 100,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      background: 'rgba(10,10,26,0.85)',
-      borderTop: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(255,255,255,0.85)',
+      borderTop: '1px solid rgba(0,0,0,0.06)',
       paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
       paddingTop: '0.35rem',
     }}>
@@ -34,6 +42,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
       }}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
+          const accentColor = activeColors[tab.id] || '#8B5CF6'
           return (
             <motion.button
               key={tab.id}
@@ -65,22 +74,22 @@ export default function BottomNav({ activeTab, onTabChange }) {
                       position: 'absolute',
                       inset: '-6px -10px',
                       borderRadius: '12px',
-                      background: 'rgba(124,90,255,0.15)',
-                      border: '1px solid rgba(124,90,255,0.2)',
+                      background: `${accentColor}12`,
+                      border: `1px solid ${accentColor}20`,
                     }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
                 <tab.Icon
                   size={22}
-                  color={isActive ? '#7c5aff' : 'rgba(255,255,255,0.35)'}
+                  color={isActive ? accentColor : '#9CA3AF'}
                 />
               </div>
               <span style={{
                 fontFamily: "'Nunito', sans-serif",
                 fontSize: '0.6rem',
                 fontWeight: isActive ? 700 : 600,
-                color: isActive ? '#7c5aff' : 'rgba(255,255,255,0.35)',
+                color: isActive ? accentColor : '#9CA3AF',
                 letterSpacing: '0.02em',
               }}>
                 {tab.label}

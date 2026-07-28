@@ -3,19 +3,19 @@ import { motion } from 'framer-motion'
 const glassStyle = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: '1.25rem',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+  background: 'rgba(255,255,255,0.7)',
+  border: '1px solid rgba(255,255,255,0.5)',
+  borderRadius: '1.5rem',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
 }
 
 const glassStyleLight = {
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  background: 'rgba(255,255,255,0.12)',
-  border: '1px solid rgba(255,255,255,0.18)',
-  borderRadius: '1.25rem',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  background: 'rgba(255,255,255,0.85)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderRadius: '1.5rem',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
 }
 
 const glassStyleDark = {
@@ -23,7 +23,7 @@ const glassStyleDark = {
   WebkitBackdropFilter: 'blur(16px)',
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '1.25rem',
+  borderRadius: '1.5rem',
   boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
 }
 
@@ -62,36 +62,36 @@ export default function GlassCard({
 export function GlassButton({ children, variant = 'primary', style = {}, className = '', disabled = false, ...props }) {
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, #7c5aff, #6a4eff)',
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
       border: '1px solid rgba(255,255,255,0.2)',
       color: 'white',
-      boxShadow: '0 4px 20px rgba(124,90,255,0.3), 0 2px 8px rgba(0,0,0,0.1)',
+      boxShadow: '0 4px 16px rgba(139,92,246,0.3)',
     },
     success: {
-      background: 'linear-gradient(135deg, #00e676, #00c853)',
+      background: 'linear-gradient(135deg, #10B981, #059669)',
       border: '1px solid rgba(255,255,255,0.2)',
       color: 'white',
-      boxShadow: '0 4px 20px rgba(0,230,118,0.3), 0 2px 8px rgba(0,0,0,0.1)',
+      boxShadow: '0 4px 16px rgba(16,185,129,0.3)',
     },
     glass: {
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
-      background: 'rgba(255,255,255,0.1)',
-      border: '1px solid rgba(255,255,255,0.15)',
-      color: 'white',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+      background: 'rgba(255,255,255,0.5)',
+      border: '1px solid rgba(0,0,0,0.06)',
+      color: '#1F2937',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
     },
     outline: {
       background: 'transparent',
-      border: '1.5px solid rgba(255,255,255,0.2)',
-      color: 'rgba(255,255,255,0.7)',
+      border: '1.5px solid rgba(0,0,0,0.1)',
+      color: '#6B7280',
       boxShadow: 'none',
     },
     danger: {
-      background: 'linear-gradient(135deg, #ff4b4b, #e53935)',
+      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
       border: '1px solid rgba(255,255,255,0.2)',
       color: 'white',
-      boxShadow: '0 4px 20px rgba(255,75,75,0.3), 0 2px 8px rgba(0,0,0,0.1)',
+      boxShadow: '0 4px 16px rgba(239,68,68,0.3)',
     },
   }
 
@@ -104,7 +104,7 @@ export function GlassButton({ children, variant = 'primary', style = {}, classNa
         justifyContent: 'center',
         gap: '0.5rem',
         padding: '0.875rem 1.5rem',
-        borderRadius: '9999px',
+        borderRadius: '16px',
         fontFamily: "'Baloo 2', cursive",
         fontWeight: 700,
         fontSize: '1rem',
@@ -132,20 +132,20 @@ export function GlassInput({ style = {}, ...props }) {
         width: '100%',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        background: 'rgba(255,255,255,0.08)',
-        border: '1.5px solid rgba(255,255,255,0.15)',
+        background: 'rgba(255,255,255,0.5)',
+        border: '1.5px solid rgba(0,0,0,0.08)',
         borderRadius: '1rem',
         padding: '0.875rem 1.25rem',
         fontSize: '1rem',
         fontWeight: 600,
-        color: 'white',
+        color: '#1F2937',
         outline: 'none',
         fontFamily: "'Nunito', sans-serif",
         transition: 'border-color 0.2s ease',
         ...style,
       }}
-      onFocus={(e) => { e.target.style.borderColor = 'rgba(124,90,255,0.5)' }}
-      onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.15)' }}
+      onFocus={(e) => { e.target.style.borderColor = 'rgba(139,92,246,0.4)' }}
+      onBlur={(e) => { e.target.style.borderColor = 'rgba(0,0,0,0.08)' }}
       {...props}
     />
   )

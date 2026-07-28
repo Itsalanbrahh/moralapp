@@ -2,148 +2,162 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getAllMissions } from '../data/missions'
-import GlassCard from '../components/GlassCard'
-import { BackArrowIcon, LockIcon, CheckIcon, StarIcon, ChevronRightIcon } from '../components/SVGIcons'
+import { BackArrowIcon, LockIcon, CheckIcon, StarIcon, ChevronRightIcon, LeafIcon, SparkleIcon, ArmchairIcon, GearIcon, FurnitureIcon } from '../components/SVGIcons'
 
-const worldColors = {
-  forest: { bg: 'rgba(0,230,118,0.08)', border: 'rgba(0,230,118,0.15)', accent: '#00e676', glow: 'rgba(0,230,118,0.1)' },
-  ocean: { bg: 'rgba(28,176,246,0.08)', border: 'rgba(28,176,246,0.15)', accent: '#1cb0f6', glow: 'rgba(28,176,246,0.1)' },
-  castle: { bg: 'rgba(255,150,0,0.08)', border: 'rgba(255,150,0,0.15)', accent: '#ff9600', glow: 'rgba(255,150,0,0.1)' },
-}
-
-const worldIcons = {
-  forest: '/assets/stories/forest-path.png',
-  ocean: '/assets/stories/ocean-kingdom.png',
-  castle: '/assets/stories/castle.png',
+const missionStyles = {
+  'forest-treasure': { color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)', image: '/assets/stories/treehouse.png' },
+  'castle-mystery': { color: '#8B5CF6', gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', image: '/assets/stories/castle.png', locked: true },
+  'ocean-adventure': { color: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #2563EB)', image: '/assets/stories/ocean-kingdom.png', locked: true },
 }
 
 export default function MissionScreen({ navigate }) {
-  const { completedMissions, level, selectedCharacter } = useGameStore()
+  const { completedMissions, level, selectedCharacter, stars } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const missions = getAllMissions()
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden bg-stars" style={{ background: '#0a0a1a' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{
+      background: 'linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%)',
+    }}>
       {/* Header */}
-      <div className="px-4 pt-3 pb-2 flex items-center gap-3 shrink-0">
-        <motion.button
-          onClick={() => navigate('home')}
-          className="w-10 h-10 rounded-full flex items-center justify-center"
-          style={{
-            backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <BackArrowIcon size={18} color="rgba(255,255,255,0.7)" />
+      <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <motion.button onClick={() => navigate('home')}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
+          whileTap={{ scale: 0.9 }}>
+          <BackArrowIcon size={16} color="#6B7280" />
         </motion.button>
-        <h1 className="font-display text-xl font-bold text-white">Missions</h1>
+        <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0, flex: 1 }}>
+          Missions
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <StarIcon size={16} color="#F59E0B" />
+          <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: '#1F2937' }}>{stars}</span>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {/* Character guide */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
-        >
-          <div className="speech-bubble flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `${character.color}15` }}>
-              <img src={character.image} alt={character.name} className="w-8 h-8 rounded-full object-cover" style={{ border: `2px solid ${character.color}40` }} />
-            </div>
-            <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Pick a world to explore! Complete missions to earn treasures!
-            </p>
+      <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem 1.5rem', WebkitOverflowScrolling: 'touch' }}>
+        {/* Subheader */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <SparkleIcon size={14} color="#10B981" />
+            <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#065F46' }}>
+              Choose your adventure!
+            </span>
+            <SparkleIcon size={14} color="#10B981" />
           </div>
         </motion.div>
 
-        {/* World cards */}
-        <div className="space-y-3">
+        {/* Mission list with dotted path */}
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Dotted path line */}
+          <div style={{
+            position: 'absolute', left: '20px', top: '24px', bottom: '24px',
+            width: '2px', borderLeft: '2px dashed rgba(16,185,129,0.3)',
+          }} />
+
           {missions.map((mission, i) => {
             const isComplete = completedMissions.includes(mission.id)
             const isLocked = mission.difficulty > level
-            const c = worldColors[mission.world] || worldColors.forest
-            const worldImg = worldIcons[mission.world]
+            const style = missionStyles[mission.id] || missionStyles['forest-treasure']
+            const stepCount = mission.steps.length
+            const completedSteps = isComplete ? stepCount : Math.floor(stepCount * 0.6)
 
             return (
               <motion.button
                 key={mission.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 200 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + i * 0.1, type: 'spring', stiffness: 200 }}
                 onClick={() => !isLocked && navigate('missionPlay', { missionId: mission.id })}
                 disabled={isLocked}
-                className="world-card w-full text-left"
+                whileTap={!isLocked ? { scale: 0.98 } : {}}
                 style={{
-                  background: isLocked ? 'rgba(255,255,255,0.03)' : c.bg,
-                  borderColor: isLocked ? 'rgba(255,255,255,0.05)' : c.border,
-                  opacity: isLocked ? 0.5 : 1,
-                  boxShadow: isLocked ? 'none' : `0 8px 24px ${c.glow}`,
+                  width: '100%', borderRadius: '20px', overflow: 'hidden',
+                  background: isLocked ? 'rgba(255,255,255,0.5)' : 'white',
+                  border: '1px solid rgba(0,0,0,0.04)',
+                  boxShadow: isLocked ? 'none' : '0 4px 16px rgba(0,0,0,0.06)',
+                  display: 'flex', alignItems: 'stretch', cursor: isLocked ? 'default' : 'pointer',
+                  textAlign: 'left', padding: 0, opacity: isLocked ? 0.7 : 1,
+                  position: 'relative',
                 }}
               >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
-                  style={{
-                    background: isLocked ? 'rgba(255,255,255,0.04)' : `${c.accent}15`,
-                    border: `2px solid ${isLocked ? 'rgba(255,255,255,0.06)' : `${c.accent}25`}`,
-                  }}>
+                {/* Number badge */}
+                <div style={{
+                  position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)',
+                  width: '24px', height: '24px', borderRadius: '50%',
+                  background: style.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  zIndex: 2,
+                }}>
+                  <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.7rem', fontWeight: 700, color: 'white' }}>{i + 1}</span>
+                </div>
+
+                {/* Image section */}
+                <div style={{
+                  width: '80px', flexShrink: 0, marginLeft: '28px',
+                  background: style.gradient,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
+                }}>
                   {isLocked ? (
-                    <LockIcon size={20} color="rgba(255,255,255,0.3)" />
+                    <LockIcon size={24} color="rgba(255,255,255,0.5)" />
                   ) : (
-                    <img src={worldImg} alt={mission.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
+                    <img src={style.image} alt={mission.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display text-lg font-bold text-white leading-tight" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
-                      {mission.title}
-                    </h3>
-                    {isComplete && (
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,230,118,0.15)' }}>
-                        <CheckIcon size={11} color="#00e676" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>{mission.description}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex gap-0.5">
-                      {[...Array(3)].map((_, j) => (
-                        <StarIcon key={j} size={12} color={j < mission.difficulty ? c.accent : 'rgba(255,255,255,0.15)'} />
-                      ))}
+
+                {/* Content */}
+                <div style={{ flex: 1, padding: '0.75rem', minWidth: 0 }}>
+                  <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.95rem', color: '#1F2937', margin: 0 }}>
+                    {mission.title}
+                  </p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#6B7280', margin: '2px 0 6px', lineHeight: 1.3 }}>
+                    {mission.description}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ flex: 1, height: '6px', background: 'rgba(0,0,0,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(completedSteps / stepCount) * 100}%`, height: '100%', background: style.gradient, borderRadius: '10px' }} />
                     </div>
-                    {isLocked && <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>Unlock at Lv{mission.difficulty}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <LeafIcon size={12} color={style.color} />
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: '#6B7280' }}>
+                        {completedSteps} / {stepCount}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                {!isLocked && <ChevronRightIcon size={20} color="rgba(255,255,255,0.2)" />}
+
+                {!isLocked && (
+                  <div style={{ display: 'flex', alignItems: 'center', paddingRight: '0.75rem', flexShrink: 0 }}>
+                    <ChevronRightIcon size={18} color="#D1D5DB" />
+                  </div>
+                )}
               </motion.button>
             )
           })}
         </div>
 
-        {/* Coming soon */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-6 text-center py-5 rounded-2xl"
+        {/* Footer banner */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
           style={{
-            backdropFilter: 'blur(16px)',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px dashed rgba(255,255,255,0.08)',
-          }}
-        >
-          <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{ marginBottom: '0.5rem' }}
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-            </svg>
-          </motion.div>
-          <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>More worlds coming soon!</p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.15)' }}>Space. Jungle. Ice Kingdom</p>
+            marginTop: '1rem', borderRadius: '16px', padding: '0.75rem 1rem',
+            background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.04)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+          }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>
+            Complete missions to earn
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <GearIcon size={14} color="#F59E0B" />
+            </div>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FurnitureIcon size={14} color="#8B5CF6" />
+            </div>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ArmchairIcon size={14} color="#3B82F6" />
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

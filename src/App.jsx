@@ -83,7 +83,7 @@ export default function App() {
   const ScreenComponent = screens[currentScreen] || HomeScreen
 
   return (
-    <div className="app-shell" style={{ background: '#0a0a1a' }}>
+    <div className="app-shell" style={{ background: '#F8F9FA' }}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentScreen}

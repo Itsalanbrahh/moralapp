@@ -4,8 +4,22 @@ import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getStory } from '../data/stories'
 import { speak, stopSpeaking, listen, isSpeechSupported } from '../utils/voice'
-import { GlassButton } from '../components/GlassCard'
-import { CloseIcon, MicIcon, BackArrowIcon, BoltIcon, CheckIcon, StarIcon } from '../components/SVGIcons'
+import { CloseIcon, MicIcon, BackArrowIcon, BoltIcon, CheckIcon, StarIcon, HeartIcon, ShieldIcon, BookIcon, PlayIcon, PauseIcon, BoxIcon, RefreshIcon, MenuDotsIcon, SpeedIcon } from '../components/SVGIcons'
+
+const characterCards = [
+  { name: 'Kael', tag: 'courage', tagIcon: 'shield', color: '#10B981' },
+  { name: 'Mira', tag: 'kindness', tagIcon: 'heart', color: '#EC4899' },
+  { name: 'Pip', tag: 'wisdom', tagIcon: 'book', color: '#8B5CF6' },
+]
+
+function TagIcon({ type, size = 12 }) {
+  switch(type) {
+    case 'shield': return <ShieldIcon size={size} color="white" />
+    case 'heart': return <HeartIcon size={size} color="white" />
+    case 'book': return <BookIcon size={size} color="white" />
+    default: return <StarIcon size={size} color="white" />
+  }
+}
 
 export default function StorybookScreen({ navigate, params }) {
   const { selectedCharacter, childName, completeStory, addXP } = useGameStore()
@@ -22,12 +36,12 @@ export default function StorybookScreen({ navigate, params }) {
   const [isDone, setIsDone] = useState(false)
   const [displayedText, setDisplayedText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [audioProgress, setAudioProgress] = useState(30)
   const typingRef = useRef(null)
 
   const scene = story?.scenes[sceneIndex]
   const progress = ((sceneIndex + 1) / story?.scenes.length) * 100
 
-  // Typewriter
   useEffect(() => {
     if (!scene?.text) return
     setDisplayedText('')
@@ -43,7 +57,6 @@ export default function StorybookScreen({ navigate, params }) {
     return () => clearInterval(typingRef.current)
   }, [sceneIndex, scene?.text])
 
-  // Auto-narrate
   useEffect(() => {
     if (!scene || isDone) return
     const timer = setTimeout(() => {
@@ -85,261 +98,301 @@ export default function StorybookScreen({ navigate, params }) {
     else advanceOrFinish()
   }
 
-  if (!story) return <div className="p-8 text-center text-white font-display">Story not found</div>
+  if (!story) return <div style={{ padding: '2rem', textAlign: 'center', color: 'white', fontFamily: "'Baloo 2', cursive" }}>Story not found</div>
 
   // Victory screen
   if (isDone) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center px-6 bg-stars"
-        style={{ background: 'linear-gradient(180deg, #0a1a0f 0%, #0a0a1a 100%)' }}>
-        {/* Confetti dots */}
+      <div className="w-full h-full flex flex-col items-center justify-center px-6"
+        style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1E1B4B 100%)' }}>
         {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
+          <motion.div key={i} className="absolute rounded-full"
             style={{
-              width: 6 + Math.random() * 8,
-              height: 6 + Math.random() * 8,
-              background: ['#7c5aff', '#ffc800', '#1cb0f6', '#ff6b9d', '#ff9600', '#00e676'][i % 6],
-              left: `${10 + Math.random() * 80}%`,
-              top: `${20 + Math.random() * 40}%`,
+              width: 6 + Math.random() * 8, height: 6 + Math.random() * 8,
+              background: ['#8B5CF6', '#FBBF24', '#3B82F6', '#EC4899', '#F59E0B', '#10B981'][i % 6],
+              left: `${10 + Math.random() * 80}%`, top: `${20 + Math.random() * 40}%`,
             }}
             animate={{ y: [0, -20 - Math.random() * 30], opacity: [1, 0], rotate: [0, 360] }}
             transition={{ duration: 1.5 + Math.random(), delay: i * 0.08, repeat: Infinity, repeatDelay: 1 }}
           />
         ))}
-
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-center relative z-10">
-          <motion.div
-            className="mb-4"
-            animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }}
-            transition={{ duration: 0.6, repeat: 2 }}
-          >
-            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto"
-              style={{
-                background: 'linear-gradient(145deg, #7c5aff, #6a4eff)',
-                boxShadow: '0 8px 32px rgba(124,90,255,0.3), 0 0 50px rgba(124,90,255,0.15)',
-              }}>
-              <StarIcon size={40} color="#ffc800" />
+          <motion.div animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }} transition={{ duration: 0.6, repeat: 2 }}>
+            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'linear-gradient(145deg, #8B5CF6, #7C3AED)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)' }}>
+              <StarIcon size={40} color="#FBBF24" />
             </div>
           </motion.div>
-          <h2 className="font-display text-3xl font-bold text-white mb-1">STORY COMPLETE!</h2>
-          <p className="mb-6 font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>Great listening, {childName}!</p>
-
-          <div className="flex gap-3 justify-center mb-8">
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col items-center"
-              style={{
-                backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)', minWidth: 80,
-              }}
-              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1" style={{ background: 'rgba(124,90,255,0.2)' }}>
-                <BoltIcon size={18} color="#c4b0ff" />
+          <h2 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.8rem', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>STORY COMPLETE!</h2>
+          <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: "'Nunito', sans-serif" }}>
+            Great listening, {childName}!
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '2rem' }}>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
+              style={{ borderRadius: '20px', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '80px',
+                backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(139,92,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
+                <BoltIcon size={18} color="#A78BFA" />
               </div>
-              <span className="text-xl font-extrabold" style={{ fontFamily: "'Baloo 2', cursive", color: '#c4b0ff' }}>+50</span>
-              <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>XP</span>
-            </motion.div>
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col items-center"
-              style={{
-                backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)', minWidth: 80,
-              }}
-              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4, type: 'spring' }}
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1" style={{ background: 'rgba(0,230,118,0.15)' }}>
-                <CheckIcon size={18} color="#00e676" />
-              </div>
-              <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>Badge</span>
+              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.25rem', fontWeight: 700, color: '#A78BFA' }}>+50</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', fontFamily: "'Nunito', sans-serif" }}>XP</span>
             </motion.div>
           </div>
-
-          <GlassButton variant="primary" onClick={() => navigate('home')}>
+          <button className="btn btn-primary" onClick={() => navigate('home')} style={{ maxWidth: '300px' }}>
             CONTINUE
-          </GlassButton>
+          </button>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0a0a1a' }}>
-      {/* Top bar with progress */}
-      <div className="px-4 pt-3 pb-1 flex items-center gap-3 shrink-0">
-        <motion.button
-          onClick={() => navigate('story')}
-          className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{
-            backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <CloseIcon size={14} color="rgba(255,255,255,0.5)" />
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A' }}>
+      {/* Header */}
+      <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <motion.button onClick={() => navigate('story')}
+          style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
+          whileTap={{ scale: 0.9 }}>
+          <BackArrowIcon size={16} color="rgba(255,255,255,0.7)" />
         </motion.button>
-        <div className="flex-1 progress-bar-track">
-          <motion.div className="progress-bar-fill" animate={{ width: `${progress}%` }} transition={{ duration: 0.5 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.9rem', color: 'white', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            The Three Lights of Whisperwood
+          </p>
         </div>
-        <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          {sceneIndex + 1}/{story.scenes.length}
-        </span>
+        <div style={{ padding: '3px 10px', borderRadius: '9999px', background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.3)' }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: '#A78BFA' }}>
+            Chapter {sceneIndex + 1} of {story.scenes.length}
+          </span>
+        </div>
+        <motion.button style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }} whileTap={{ scale: 0.9 }}>
+          <HeartIcon size={14} color="#EC4899" filled={false} />
+        </motion.button>
+        <motion.button style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }} whileTap={{ scale: 0.9 }}>
+          <MenuDotsIcon size={14} color="rgba(255,255,255,0.5)" />
+        </motion.button>
       </div>
 
-      {/* Scene content */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        {/* Illustration */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={sceneIndex}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="flex-shrink-0 flex items-center justify-center py-5"
-          >
-            <motion.div
-              className="w-28 h-28 rounded-full flex items-center justify-center"
+      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Character Cards */}
+        <div style={{ padding: '0.5rem 1rem', display: 'flex', gap: '8px', marginBottom: '0.75rem' }}>
+          {characterCards.map((char, i) => (
+            <motion.div key={char.name} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.08 }}
               style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '2px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2), 0 0 40px rgba(124,90,255,0.05)',
+                flex: 1, borderRadius: '20px', overflow: 'hidden',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
                 backdropFilter: 'blur(16px)',
-              }}
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>{scene.illustration}</span>
+              }}>
+              <div style={{
+                height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `linear-gradient(135deg, ${char.color}30, ${char.color}10)`,
+              }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%',
+                  background: `${char.color}30`, border: `2px solid ${char.color}40`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>{char.name === 'Kael' ? '🦊' : char.name === 'Mira' ? '🐦' : '🦉'}</span>
+                </div>
+              </div>
+              <div style={{ padding: '6px 8px', textAlign: 'center' }}>
+                <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.8rem', fontWeight: 700, color: 'white', margin: 0 }}>{char.name}</p>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 8px', borderRadius: '9999px', background: `${char.color}25`, marginTop: '3px' }}>
+                  <TagIcon type={char.tagIcon} size={9} />
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: char.color }}>{char.tag}</span>
+                </div>
+              </div>
             </motion.div>
+          ))}
+        </div>
+
+        {/* Scene illustration */}
+        <AnimatePresence mode="wait">
+          <motion.div key={sceneIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 1rem' }}>
+            <div style={{
+              width: '100%', height: '140px', borderRadius: '20px', overflow: 'hidden',
+              background: scene?.background || 'linear-gradient(180deg, #1a2a1a, #0d2818)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <img src={scene?.image} alt="Scene" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
+            </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Character + speech bubble */}
-        <div className="px-5 flex-shrink-0">
-          <div className="flex items-start gap-3 mb-3">
-            <motion.div
-              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-1"
-              style={{
-                background: `${character.color}20`,
-                border: `2px solid ${character.color}30`,
-                backdropFilter: 'blur(16px)',
-              }}
-              animate={isPlaying ? { y: [0, -4, 0] } : {}}
-              transition={{ duration: 0.4, repeat: Infinity }}
-            >
-              <img src={character.image} alt={character.name} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+        {/* Story text */}
+        <div style={{ padding: '0.75rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <motion.div style={{
+              width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+              border: `2px solid ${character.color}40`,
+            }} animate={isPlaying ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.4, repeat: Infinity }}>
+              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </motion.div>
-            <div className="speech-bubble flex-1">
-              <p className="text-base leading-relaxed font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            <div style={{
+              flex: 1, backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem',
+              padding: '0.75rem 1rem',
+            }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', lineHeight: 1.6, fontWeight: 600, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
                 {displayedText}
-                {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ color: 'rgba(124,90,255,0.5)' }}>|</motion.span>}
+                {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }} style={{ color: 'rgba(139,92,246,0.5)' }}>|</motion.span>}
               </p>
             </div>
           </div>
-
-          {/* Voice indicator */}
-          {isPlaying && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 ml-14 mb-2">
-              <div className="flex items-end gap-0.5 h-4">
-                {[0,1,2,3].map(i => (
-                  <div key={i} className="w-1 rounded-full" style={{
-                    background: '#7c5aff',
-                    animation: `voice-wave 0.6s ease-in-out ${i * 0.1}s infinite`,
-                    height: 8,
-                  }} />
-                ))}
-              </div>
-              <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>Speaking...</span>
-            </motion.div>
-          )}
         </div>
 
         {/* Reaction */}
         <AnimatePresence>
           {showReaction && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="mx-5 mt-3"
-            >
-              <div className="rounded-xl p-3 flex items-center gap-2.5"
-                style={{
-                  backdropFilter: 'blur(16px)',
-                  background: 'rgba(0,230,118,0.1)',
-                  border: '1px solid rgba(0,230,118,0.2)',
-                  boxShadow: '0 4px 16px rgba(0,230,118,0.1)',
-                }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,230,118,0.15)' }}>
-                  <CheckIcon size={14} color="#00e676" />
-                </div>
-                <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{reactionText}</p>
+            <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+              style={{ margin: '0 1rem', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckIcon size={12} color="#10B981" />
               </div>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{reactionText}</p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Bottom action area */}
-      <div className="shrink-0 p-4 safe-bottom" style={{ background: '#0a0a1a', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        {showQuestion && scene.question ? (
-          <div>
-            <p className="font-display text-lg font-bold text-white mb-3">{scene.question}</p>
-
-            {scene.type === 'choice' ? (
-              <div className="space-y-2 mb-3">
-                {scene.choices.map((choice, i) => (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, x: -15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + i * 0.08 }}
-                    onClick={() => { setSelectedChoice(i); handleAnswer(choice) }}
-                    disabled={selectedChoice !== null}
-                    className={`choice-card ${selectedChoice === i ? 'selected' : ''}`}
-                  >
-                    <span className="text-lg">{['A', 'B', 'C'][i] || '*'}</span>
-                    {choice}
-                  </motion.button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                {isSpeechSupported() && (
-                  <GlassButton
-                    variant={isListening ? 'success' : 'primary'}
-                    onClick={async () => {
-                      setIsListening(true)
-                      try {
-                        const r = await listen({ timeout: 15000 })
-                        if (r.transcript) handleAnswer(r.transcript)
-                      } catch(e) { console.warn(e) }
-                      setIsListening(false)
-                    }}
-                    disabled={isListening}
-                    className="flex-1"
-                    style={{ flex: 1 }}
-                  >
-                    <MicIcon size={18} color="white" />
-                    {isListening ? 'LISTENING...' : 'SPEAK'}
-                  </GlassButton>
-                )}
-                <GlassButton variant="glass" onClick={() => handleAnswer('(skip)')} style={{ flex: 1 }}>
-                  SKIP
-                </GlassButton>
-              </div>
-            )}
-          </div>
-        ) : !isTyping ? (
-          <GlassButton variant="primary" onClick={handleSkip}>
-            CONTINUE
-          </GlassButton>
-        ) : (
-          <GlassButton variant="glass" onClick={handleSkip}>
-            SKIP
-          </GlassButton>
-        )}
+      {/* Audio Player */}
+      <div style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <motion.button
+          onClick={() => { setIsPlaying(!isPlaying); if (isPlaying) stopSpeaking() }}
+          whileTap={{ scale: 0.9 }}
+          style={{
+            width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
+          }}>
+          {isPlaying ? <PauseIcon size={16} color="white" /> : <PlayIcon size={16} color="white" />}
+        </motion.button>
+        {/* Waveform */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '2px', height: '24px' }}>
+          {[...Array(30)].map((_, i) => {
+            const h = 4 + Math.sin(i * 0.5) * 8 + Math.random() * 4
+            return <div key={i} style={{ width: '3px', height: `${h}px`, borderRadius: '2px', background: i < 30 * audioProgress / 100 ? '#8B5CF6' : 'rgba(255,255,255,0.15)' }} />
+          })}
+        </div>
+        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
+          1:24 / 4:36
+        </span>
+        <div style={{ padding: '3px 8px', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
+          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>1.0x</span>
+        </div>
       </div>
+
+      {/* Interaction Prompt */}
+      {showQuestion && scene?.question && (
+        <div style={{ padding: '0 1rem 0.5rem', flexShrink: 0 }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.9)', borderRadius: '20px', padding: '0.75rem 1rem',
+            display: 'flex', alignItems: 'center', gap: '10px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+          }}>
+            <StarIcon size={18} color="#F59E0B" />
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#1F2937', margin: 0, flex: 1 }}>
+              {scene.question}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Microphone Button */}
+      {showQuestion && scene?.questionType === 'open' && (
+        <div style={{ padding: '0 1rem 0.5rem', textAlign: 'center', flexShrink: 0 }}>
+          <motion.button
+            onClick={async () => {
+              if (!isSpeechSupported()) { handleAnswer('(no voice)'); return }
+              setIsListening(true)
+              try { const r = await listen({ timeout: 15000 }); if (r.transcript) handleAnswer(r.transcript) } catch(e) { console.warn(e) }
+              setIsListening(false)
+            }}
+            whileTap={{ scale: 0.95 }}
+            animate={isListening ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 0.8, repeat: isListening ? Infinity : 0 }}
+            style={{
+              width: '64px', height: '64px', borderRadius: '50%', margin: '0 auto',
+              background: 'linear-gradient(135deg, #EC4899, #F472B6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', border: 'none',
+              boxShadow: '0 4px 20px rgba(236,72,153,0.3)',
+            }}>
+            <MicIcon size={24} color="white" />
+          </motion.button>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', margin: '6px 0 0' }}>
+            Tap the mic and share your thoughts.
+          </p>
+        </div>
+      )}
+
+      {/* Footer Actions */}
+      <div style={{ padding: '0.5rem 1rem 1rem', display: 'flex', gap: '10px', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <motion.button whileTap={{ scale: 0.97 }}
+          style={{
+            flex: 1, borderRadius: '16px', padding: '0.6rem',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+          }}>
+          <BoxIcon size={16} color="rgba(255,255,255,0.5)" />
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Archive</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', margin: 0 }}>4 saved</p>
+          </div>
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.97 }}
+          style={{
+            flex: 1, borderRadius: '16px', padding: '0.6rem',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+          }}>
+          <RefreshIcon size={16} color="rgba(255,255,255,0.5)" />
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Retell the Story</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', margin: 0 }}>Hear it again!</p>
+          </div>
+          <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', marginLeft: 'auto' }}>
+            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+        </motion.button>
+      </div>
+
+      {/* Choice buttons (for choice-type questions) */}
+      {showQuestion && scene?.questionType === 'choice' && (
+        <div style={{ padding: '0 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+          {scene.choices.map((choice, i) => (
+            <motion.button key={i} initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.08 }}
+              onClick={() => { setSelectedChoice(i); handleAnswer(choice) }}
+              disabled={selectedChoice !== null}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '0.75rem 1rem', borderRadius: '16px',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', textAlign: 'left', width: '100%',
+              }}>
+              <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1rem', fontWeight: 700, color: '#A78BFA' }}>
+                {['A', 'B', 'C'][i]}
+              </span>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+                {choice}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      )}
+
+      {/* Continue / Skip buttons */}
+      {!showQuestion && (
+        <div style={{ padding: '0 1rem 1rem', flexShrink: 0 }}>
+          <button className="btn btn-primary" onClick={handleSkip} style={{ maxWidth: '100%' }}>
+            {isTyping ? 'SKIP' : 'CONTINUE'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
