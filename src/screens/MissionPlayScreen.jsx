@@ -7,7 +7,7 @@ import { speak } from '../utils/voice'
 import { CloseIcon, BoltIcon, StarIcon, TrophyIcon, CheckIcon } from '../components/SVGIcons'
 
 export default function MissionPlayScreen({ navigate, params }) {
-  const { selectedCharacter, childName, completeMission, addXP, addStars, addGear, addFurniture, addBadge } = useGameStore()
+  const { selectedCharacter, childName, completeMission, addXP, addStars, addGear, addFurniture, addBadge, addPet } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const mission = getMission(params.missionId)
 
@@ -57,6 +57,7 @@ export default function MissionPlayScreen({ navigate, params }) {
     if (reward.badge) addBadge(reward.badge)
     if (reward.gear) addGear(reward.gear)
     if (reward.furniture) addFurniture(reward.furniture)
+    if (reward.pet) addPet(reward.pet)
     setRewardData(reward)
     setShowReward(true)
     setTimeout(() => setShowReward(false), 2200)
@@ -187,6 +188,13 @@ export default function MissionPlayScreen({ navigate, params }) {
               <StarIcon size={40} color="#FBBF24" />
             </motion.div>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: '#9CA3AF', margin: '0.5rem 0' }}>Reward!</p>
+            {rewardData.pet && (
+              <div style={{ marginBottom: '4px' }}>
+                <div style={{ fontSize: '2.2rem', lineHeight: 1 }}>{rewardData.pet.emoji}</div>
+                <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: '4px 0 0' }}>New friend: {rewardData.pet.name}!</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#8B5CF6', margin: 0 }}>Take them home to your house 🏡</p>
+              </div>
+            )}
             {rewardData.badge && <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: 0 }}>{rewardData.badge.name}</p>}
             {rewardData.gear && <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: 0 }}>{rewardData.gear.name}</p>}
             {rewardData.furniture && <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: 0 }}>{rewardData.furniture.name}</p>}

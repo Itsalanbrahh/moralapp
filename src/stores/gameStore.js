@@ -16,6 +16,7 @@ const initialState = {
   badges: [],
   gear: [],
   furniture: [],
+  pets: [], // discovered companions (never granted by default — earned in Adventures)
 
   // Story state
   completedStories: [],
@@ -28,7 +29,13 @@ const initialState = {
   currentMission: null,
   missionProgress: {},
 
-  // House state
+  // House state (interactive room)
+  // placedItems: [{ uid, itemId, kind: 'item' | 'pet', x, y }] positions are % of the room
+  placedItems: [],
+  wallStyle: 'lavender',
+  floorStyle: 'wood',
+
+  // Legacy grid layout (kept for backward compatibility with old saves)
   houseLayout: {
     livingRoom: [],
     bedroom: [],
@@ -84,6 +91,11 @@ export const useGameStore = create(
         furniture: s.furniture.some(f => f.id === item.id) ? s.furniture : [...s.furniture, item]
       })),
 
+      // Pets are ONLY added here — discovered through Adventures, never seeded by default
+      addPet: (pet) => set((s) => ({
+        pets: s.pets.some(p => p.id === pet.id) ? s.pets : [...s.pets, pet]
+      })),
+
       // Story progression
       startStory: (storyId) => set({ currentStory: storyId, currentScene: 0 }),
 
@@ -129,19 +141,33 @@ export const useGameStore = create(
         state.addStars(3)
       },
 
-      // House
-      placeFurniture: (room, itemId) => set((s) => ({
-        houseLayout: {
-          ...s.houseLayout,
-          [room]: [...s.houseLayout[room], itemId],
-        }
+      // ---- Interactive house ----
+      placeHouseItem: ({ itemId, kind = 'item', x = 50, y = 70 }) => {
+        const uid = `${itemId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+        set((s) => ({ placedItems: [...s.placedItems, { uid, itemId, kind, x, y }] }))
+        return uid
+      },
+
+      moveHouseItem: (uid, x, y) => set((s) => ({
+        placedItems: s.placedItems.map(p => p.uid === uid ? { ...p, x, y } : p),
       })),
 
+      removeHouseItem: (uid) => set((s) => ({
+        placedItems: s.placedItems.filter(p => p.uid !== uid),
+      })),
+
+      // Bulk replace — used by undo / redo so history stays simple
+      setPlacedItems: (items) => set({ placedItems: items }),
+
+      setWallStyle: (wallStyle) => set({ wallStyle }),
+      setFloorStyle: (floorStyle) => set({ floorStyle }),
+
+      // Legacy grid layout helpers (retained for old saves)
+      placeFurniture: (room, itemId) => set((s) => ({
+        houseLayout: { ...s.houseLayout, [room]: [...s.houseLayout[room], itemId] },
+      })),
       removeFurniture: (room, itemId) => set((s) => ({
-        houseLayout: {
-          ...s.houseLayout,
-          [room]: s.houseLayout[room].filter(id => id !== itemId),
-        }
+        houseLayout: { ...s.houseLayout, [room]: s.houseLayout[room].filter(id => id !== itemId) },
       })),
 
       // Settings
@@ -153,7 +179,18 @@ export const useGameStore = create(
     }),
     {
       name: 'moral-game-storage',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        if (!persisted) return persisted
+        if (version < 2) {
+          // Introduce interactive-house + pets fields for older saves
+          persisted.pets = persisted.pets || []
+          persisted.placedItems = persisted.placedItems || []
+          persisted.wallStyle = persisted.wallStyle || 'lavender'
+          persisted.floorStyle = persisted.floorStyle || 'wood'
+        }
+        return persisted
+      },
     }
   )
 )

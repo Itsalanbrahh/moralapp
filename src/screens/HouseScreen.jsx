@@ -1,216 +1,459 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
-import { BackArrowIcon, BackpackIcon, CloseIcon, HomeIcon } from '../components/SVGIcons'
+import {
+  WALLS, FLOORS, CATEGORIES,
+  getHouseItem, getPetDef, getWall, getFloor,
+  itemsByCategory, allPets,
+} from '../data/houseItems'
+import { BackArrowIcon, StarIcon, HeartIcon, BoltIcon, LeafIcon, CloseIcon, CheckIcon, LockIcon } from '../components/SVGIcons'
 
-const defaultFurniture = [
-  { id: 'cozy-bed', name: 'Cozy Bed', icon: 'bed', room: 'bedroom' },
-  { id: 'fluffy-rug', name: 'Fluffy Rug', icon: 'rug', room: 'livingRoom' },
-  { id: 'potted-plant', name: 'Potted Plant', icon: 'plant', room: 'livingRoom' },
-]
+// Floor band (as % of the room box). Items live on the floor and scale with depth.
+const FLOOR_TOP = 47
+const FLOOR_BOTTOM = 91
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+const depthScale = (y) => 0.66 + ((y - FLOOR_TOP) / (FLOOR_BOTTOM - FLOOR_TOP)) * 0.6
 
-const roomThemes = {
-  livingRoom: { name: 'Living Room', accent: '#10B981', bg: '#D1FAE5' },
-  bedroom: { name: 'Bedroom', accent: '#8B5CF6', bg: '#EDE9FE' },
-  garden: { name: 'Garden', accent: '#3B82F6', bg: '#DBEAFE' },
+function UndoIcon({ size = 16, color = '#6B7280' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7v6h6" /><path d="M3 13a9 9 0 1 0 3-7.7L3 8" />
+    </svg>
+  )
 }
-
-function FurnitureIcon({ type, size = 24, color = '#6B7280' }) {
-  const icons = {
-    bed: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M2 4v16M22 4v16M2 8h20M2 16h20M6 8v8M18 8v8" /></svg>,
-    rug: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><rect x="2" y="6" width="20" height="12" rx="2" /><line x1="2" y1="12" x2="22" y2="12" strokeDasharray="4 2" /></svg>,
-    plant: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M12 22V8M12 8c-4 0-6-3-6-6 6 0 6 6 6 6zM12 8c4 0 6-3 6-6-6 0-6 6-6 6z" /></svg>,
-    mushroom: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M12 14v8M8 22h8M4 14c0-5 3.5-10 8-10s8 5 8 10H4z" /></svg>,
-    trophy: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>,
-    fountain: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4c0 2 2 4 4 4s4-2 4-4M5 22h14M7 22c0-3 2-5 5-5s5 2 5 5" /></svg>,
-    throne: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M5 22V10l7-8 7 8v12M9 14h6M3 22h18" /></svg>,
-    lamp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M9 18h6M10 22h4M12 2v1M4 10a8 8 0 0 1 16 0M12 14v4" /></svg>,
-    cupcake: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M12 2c-2 0-3 2-3 4s1 2 3 2 3 0 3-2-1-4-3-4zM7 10h10l-1 12H8L7 10z" /></svg>,
-    pearl: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" fill={`${color}30`} /></svg>,
-    acorn: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M12 2c-3 0-5 2-5 5 0 4 5 10 5 10s5-6 5-10c0-3-2-5-5-5z" /></svg>,
-  }
-  return icons[type] || icons.plant
+function RedoIcon({ size = 16, color = '#6B7280' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 7v6h-6" /><path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
+    </svg>
+  )
 }
 
 export default function HouseScreen({ navigate }) {
-  const { selectedCharacter, houseLayout, furniture, gear, placeFurniture, removeFurniture } = useGameStore()
-  const character = getCharacter(selectedCharacter)
-  const [activeRoom, setActiveRoom] = useState('livingRoom')
-  const [showInventory, setShowInventory] = useState(false)
+  const {
+    selectedCharacter, childName, xp, stars,
+    furniture, gear, pets,
+    placedItems, wallStyle, floorStyle,
+    placeHouseItem, moveHouseItem, removeHouseItem, setPlacedItems,
+    setWallStyle, setFloorStyle,
+  } = useGameStore()
 
-  const allFurniture = [...defaultFurniture, ...furniture]
-  const placedInRoom = houseLayout[activeRoom] || []
-  const placedItems = placedInRoom.map(id => allFurniture.find(f => f.id === id)).filter(Boolean)
-  const unplacedItems = allFurniture.filter(f => f.room === activeRoom && !placedInRoom.includes(f.id))
+  const character = getCharacter(selectedCharacter)
+
+  const [category, setCategory] = useState('furniture')
+  const [selectedUid, setSelectedUid] = useState(null)
+  const [livePos, setLivePos] = useState(null) // { uid, x, y } while dragging
+  const [toast, setToast] = useState(null)
+  const [peek, setPeek] = useState(false)
+
+  // Undo / redo history (session-scoped)
+  const [past, setPast] = useState([])
+  const [future, setFuture] = useState([])
+
+  const roomRef = useRef(null)
+  const drag = useRef(null)
+
+  const showToast = useCallback((msg) => {
+    setToast(msg)
+    clearTimeout(showToast._t)
+    showToast._t = setTimeout(() => setToast(null), 1600)
+  }, [])
+
+  const record = useCallback((snapshot) => {
+    setPast((p) => [...p, snapshot])
+    setFuture([])
+  }, [])
+
+  // ---- ownership ----
+  const ownedItemIds = new Set([...furniture.map((f) => f.id), ...gear.map((g) => g.id)])
+  const ownedPetIds = new Set(pets.map((p) => p.id))
+  const isItemOwned = (item) => item.default || ownedItemIds.has(item.id)
+  const placedPetCount = placedItems.filter((p) => p.kind === 'pet').length
+
+  // ---- placing / moving / removing ----
+  const placeNew = (itemId, kind) => {
+    record(placedItems)
+    const uid = placeHouseItem({ itemId, kind, x: 50, y: 68 })
+    setSelectedUid(uid)
+    showToast('Placed! Drag to arrange ✨')
+  }
+
+  const remove = (uid) => {
+    record(placedItems)
+    removeHouseItem(uid)
+    setSelectedUid(null)
+  }
+
+  const coordsFromEvent = (clientX, clientY) => {
+    const rect = roomRef.current.getBoundingClientRect()
+    return {
+      x: clamp(((clientX - rect.left) / rect.width) * 100, 6, 94),
+      y: clamp(((clientY - rect.top) / rect.height) * 100, FLOOR_TOP, FLOOR_BOTTOM),
+    }
+  }
+
+  const onItemPointerDown = (e, uid) => {
+    e.stopPropagation()
+    try { roomRef.current.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    drag.current = { uid, startX: e.clientX, startY: e.clientY, moved: false, snapshot: placedItems, pointerId: e.pointerId }
+  }
+
+  const onRoomPointerMove = (e) => {
+    const d = drag.current
+    if (!d) return
+    const dist = Math.hypot(e.clientX - d.startX, e.clientY - d.startY)
+    if (dist > 5) d.moved = true
+    if (d.moved) setLivePos({ uid: d.uid, ...coordsFromEvent(e.clientX, e.clientY) })
+  }
+
+  const endDrag = (e) => {
+    const d = drag.current
+    if (!d) return
+    try { roomRef.current.releasePointerCapture(d.pointerId) } catch { /* noop */ }
+    if (d.moved) {
+      const { x, y } = coordsFromEvent(e.clientX, e.clientY)
+      record(d.snapshot)
+      moveHouseItem(d.uid, x, y)
+    } else {
+      setSelectedUid((cur) => (cur === d.uid ? null : d.uid))
+    }
+    drag.current = null
+    setLivePos(null)
+  }
+
+  const undo = () => {
+    if (!past.length) return
+    const prev = past[past.length - 1]
+    setFuture((f) => [placedItems, ...f])
+    setPast((p) => p.slice(0, -1))
+    setPlacedItems(prev)
+    setSelectedUid(null)
+  }
+  const redo = () => {
+    if (!future.length) return
+    const next = future[0]
+    setPast((p) => [...p, placedItems])
+    setFuture((f) => f.slice(1))
+    setPlacedItems(next)
+    setSelectedUid(null)
+  }
+
+  const saveHome = () => {
+    setSelectedUid(null)
+    showToast('Home saved! 🏡')
+  }
+
+  const wall = getWall(wallStyle)
+  const floor = getFloor(floorStyle)
+  const orderedPlaced = [...placedItems].sort((a, b) => a.y - b.y)
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#F8F9FA' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#F5F3FF' }}>
       {/* Header */}
-      <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <motion.button onClick={() => navigate('home')}
-            style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
-            whileTap={{ scale: 0.9 }}>
-            <BackArrowIcon size={16} color="#6B7280" />
-          </motion.button>
-          <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: 0 }}>
-            {character.name}'s House
-          </h1>
-        </div>
-        <motion.button onClick={() => setShowInventory(!showInventory)}
-          whileTap={{ scale: 0.95 }}
-          style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05))',
-            border: '1px solid rgba(139,92,246,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
-          <BackpackIcon size={16} color="#8B5CF6" />
+      <div style={{ padding: '0.6rem 1rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <motion.button onClick={() => navigate('home')} whileTap={{ scale: 0.9 }}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <BackArrowIcon size={16} color="#7C3AED" />
         </motion.button>
-      </div>
-
-      {/* Room tabs */}
-      <div style={{ padding: '0 1rem 0.75rem', display: 'flex', gap: '8px', flexShrink: 0 }}>
-        {Object.entries(roomThemes).map(([key, room]) => {
-          const isActive = activeRoom === key
-          return (
-            <motion.button key={key} onClick={() => setActiveRoom(key)}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                padding: '6px 14px', borderRadius: '12px',
-                background: isActive ? room.bg : 'transparent',
-                border: isActive ? `1px solid ${room.accent}30` : '1px solid transparent',
-                fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700,
-                color: isActive ? room.accent : '#9CA3AF', cursor: 'pointer',
-              }}>
-              {room.name}
-            </motion.button>
-          )
-        })}
-      </div>
-
-      {/* Room view */}
-      <div className="flex-1 mx-4 rounded-2xl overflow-hidden relative" style={{
-        background: `linear-gradient(180deg, ${roomThemes[activeRoom].bg}, white)`,
-        border: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-      }}>
-        {/* Character */}
-        <motion.div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-          animate={{ y: [0, -6, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden',
-            border: `2px solid ${character.color}40`, boxShadow: `0 8px 24px ${character.color}15`,
-          }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-        </motion.div>
-
-        {/* Placed furniture */}
-        <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', position: 'relative', zIndex: 5 }}>
-          {placedItems.map((item) => (
-            <motion.div key={item.id} initial={{ scale: 0 }} animate={{ scale: 1 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <motion.button onClick={() => removeFurniture(activeRoom, item.id)}
-                whileTap={{ scale: 0.85 }}
-                style={{
-                  width: '52px', height: '52px', borderRadius: '14px',
-                  background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                }}>
-                <FurnitureIcon type={item.icon || 'plant'} size={22} color="#6B7280" />
-              </motion.button>
-              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: '#9CA3AF', marginTop: '3px', textAlign: 'center' }}>{item.name}</span>
-            </motion.div>
-          ))}
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '1.15rem', color: '#5B21B6', margin: 0, lineHeight: 1.1 }}>
+            {childName ? `${childName}'s House` : `${character.name}'s House`}
+          </h1>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: '#A78BFA', margin: 0, fontWeight: 700 }}>Decorate your cozy space</p>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'white', borderRadius: '9999px', padding: '5px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <StarIcon size={14} color="#FBBF24" />
+          <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '0.85rem', color: '#1F2937' }}>{stars}</span>
+        </div>
+      </div>
 
-        {placedItems.length === 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', paddingBottom: '80px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                <HomeIcon size={36} color="#D1D5DB" />
-              </motion.div>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 700, color: '#9CA3AF', marginTop: '8px' }}>Empty room!</p>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#D1D5DB', marginTop: '4px' }}>Open your backpack to add furniture</p>
+      {/* Stats bar */}
+      <div style={{ padding: '0 1rem 0.5rem', display: 'flex', gap: '8px', flexShrink: 0 }}>
+        {[
+          { icon: <HeartIcon size={15} color="#EC4899" />, bg: '#FCE7F3', label: 'Cozy', value: placedItems.length },
+          { icon: <BoltIcon size={15} color="#F59E0B" />, bg: '#FEF3C7', label: 'XP', value: xp },
+          { icon: <LeafIcon size={15} color="#10B981" />, bg: '#D1FAE5', label: 'Happy Pets', value: `${placedPetCount}/${pets.length}` },
+        ].map((s, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '7px', background: 'white', borderRadius: '14px', padding: '7px 9px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ width: '26px', height: '26px', borderRadius: '8px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{s.icon}</div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: '#9CA3AF', margin: 0, whiteSpace: 'nowrap' }}>{s.label}</p>
+              <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1 }}>{s.value}</p>
             </div>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Gear collection */}
-      {gear.length > 0 && (
-        <div style={{ padding: '0.75rem 1rem', flexShrink: 0 }}>
-          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Gear</p>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
-            {gear.map(item => (
-              <div key={item.id} style={{
-                flexShrink: 0, borderRadius: '12px', padding: '6px 10px',
-                background: 'white', border: '1px solid rgba(0,0,0,0.04)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              }}>
-                <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', whiteSpace: 'nowrap' }}>{item.name}</span>
-              </div>
-            ))}
+      {/* ===== Interactive isometric room ===== */}
+      <div
+        ref={roomRef}
+        onPointerMove={onRoomPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerDown={() => setSelectedUid(null)}
+        style={{
+          position: 'relative', margin: '0 12px', borderRadius: '22px', overflow: 'hidden',
+          flex: 1, minHeight: 0, touchAction: 'none',
+          boxShadow: '0 10px 30px rgba(91,33,182,0.15)', border: '1px solid rgba(0,0,0,0.05)',
+          background: wall.wall,
+        }}
+      >
+        {/* Back wall decorations */}
+        {wall.dark && [...Array(14)].map((_, i) => (
+          <div key={i} style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', background: 'white', opacity: 0.7,
+            top: `${5 + Math.random() * 35}%`, left: `${5 + Math.random() * 90}%` }} />
+        ))}
+        {/* Round window */}
+        <div style={{ position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', width: '62px', height: '62px', borderRadius: '50%',
+          background: wall.dark ? 'radial-gradient(circle at 40% 35%,#4C1D95,#1E1B4B)' : 'radial-gradient(circle at 40% 35%,#FDE68A,#FBCFE8)',
+          border: '5px solid rgba(255,255,255,0.85)', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%',
+            background: 'linear-gradient(90deg,transparent 47%,rgba(255,255,255,0.7) 47% 53%,transparent 53%),linear-gradient(0deg,transparent 47%,rgba(255,255,255,0.7) 47% 53%,transparent 53%)' }} />
+        </div>
+        {/* String lights */}
+        <svg viewBox="0 0 300 40" preserveAspectRatio="none" style={{ position: 'absolute', top: '3%', left: 0, width: '100%', height: '38px', opacity: 0.9 }}>
+          <path d="M0 6 Q75 34 150 12 T300 8" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+          {[...Array(9)].map((_, i) => (
+            <circle key={i} cx={15 + i * 34} cy={16 + (i % 2) * 8} r="3.2" fill={['#FBBF24', '#F472B6', '#A78BFA', '#34D399'][i % 4]} />
+          ))}
+        </svg>
+
+        {/* Floor plane (isometric) — top edge sits high so, once foreshortened, the wood
+            reaches up to the skirting line and fills the whole floor zone */}
+        <div style={{
+          position: 'absolute', left: '-32%', right: '-32%', top: '24%', bottom: 0,
+          background: floor.floor, backgroundColor: floor.base,
+          transform: 'perspective(680px) rotateX(46deg)', transformOrigin: '50% 100%',
+          boxShadow: 'inset 0 10px 50px rgba(0,0,0,0.16)', pointerEvents: 'none',
+        }} />
+        {/* Soft blend where wall meets floor */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: `${FLOOR_TOP - 3}%`, height: '5%', background: 'linear-gradient(180deg,rgba(0,0,0,0.06),transparent)', pointerEvents: 'none' }} />
+
+        {/* Character avatar standing in the room */}
+        <motion.div
+          animate={{ y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'absolute', left: '50%', top: '86%', transform: `translate(-50%,-100%) scale(${depthScale(86)})`, zIndex: Math.round(86 * 4), pointerEvents: 'none', textAlign: 'center' }}>
+          <div style={{ width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${character.color}`, boxShadow: `0 6px 18px ${character.color}40`, background: 'white' }}>
+            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
+          <div style={{ width: '46px', height: '10px', borderRadius: '50%', background: 'rgba(0,0,0,0.18)', filter: 'blur(4px)', margin: '2px auto 0' }} />
+        </motion.div>
+
+        {/* Placed items & pets */}
+        {orderedPlaced.map((p) => {
+          const def = p.kind === 'pet' ? getPetDef(p.itemId) : getHouseItem(p.itemId)
+          if (!def) return null
+          const live = livePos && livePos.uid === p.uid ? livePos : p
+          const ds = depthScale(live.y)
+          const size = 42 * (def.scale || 1) * ds
+          const isSel = selectedUid === p.uid
+          return (
+            <div key={p.uid}
+              onPointerDown={(e) => onItemPointerDown(e, p.uid)}
+              style={{
+                position: 'absolute', left: `${live.x}%`, top: `${live.y}%`,
+                transform: 'translate(-50%,-100%)', zIndex: Math.round(live.y * 4) + (isSel ? 500 : 0),
+                cursor: 'grab', touchAction: 'none', textAlign: 'center', userSelect: 'none',
+              }}>
+              {/* remove button when selected */}
+              {isSel && !peek && (
+                <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  onPointerDown={(e) => { e.stopPropagation(); remove(p.uid) }}
+                  style={{ position: 'absolute', top: -14, right: -14, width: 24, height: 24, borderRadius: '50%', background: '#EF4444', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', zIndex: 10 }}>
+                  <CloseIcon size={11} color="white" />
+                </motion.button>
+              )}
+              <motion.div
+                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 14 }}
+                style={{
+                  fontSize: `${size}px`, lineHeight: 1,
+                  filter: `drop-shadow(0 4px 4px rgba(0,0,0,0.25))${isSel ? ' drop-shadow(0 0 6px rgba(139,92,246,0.9))' : ''}`,
+                }}>
+                {def.emoji}
+              </motion.div>
+              {/* ground shadow */}
+              <div style={{ width: `${size * 0.7}px`, height: `${size * 0.16}px`, borderRadius: '50%', background: 'rgba(0,0,0,0.16)', filter: 'blur(3px)', margin: '-2px auto 0' }} />
+            </div>
+          )
+        })}
+
+        {/* Empty room hint */}
+        {placedItems.length === 0 && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: '0 2rem' }}>
+            <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.4, repeat: Infinity }}
+              style={{ textAlign: 'center', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', borderRadius: '16px', padding: '0.9rem 1.1rem', boxShadow: '0 6px 20px rgba(0,0,0,0.08)' }}>
+              <div style={{ fontSize: '1.8rem' }}>🪄</div>
+              <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '0.9rem', color: '#5B21B6', margin: '4px 0 0' }}>Your room is empty!</p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#8B5CF6', margin: '2px 0 0' }}>Tap items below to decorate</p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Undo / Redo (top-left over room) */}
+        {!peek && (
+          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 900 }}>
+            <RoundBtn onClick={undo} disabled={!past.length}><UndoIcon color={past.length ? '#7C3AED' : '#D1D5DB'} /></RoundBtn>
+            <RoundBtn onClick={redo} disabled={!future.length}><RedoIcon color={future.length ? '#7C3AED' : '#D1D5DB'} /></RoundBtn>
+          </div>
+        )}
+
+        {/* View / Edit toggle (top-right over room) */}
+        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 900 }}>
+          <motion.button whileTap={{ scale: 0.92 }} onClick={() => { setPeek(!peek); setSelectedUid(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'white', borderRadius: '9999px', padding: '7px 11px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <span style={{ fontSize: '0.8rem' }}>{peek ? '✏️' : '👁️'}</span>
+            <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.7rem', color: '#7C3AED' }}>{peek ? 'Edit' : 'View'}</span>
+          </motion.button>
+        </div>
+
+        {/* Save Home button */}
+        {!peek && (
+          <motion.button whileTap={{ scale: 0.96 }} onClick={saveHome}
+            style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 900,
+              display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 20px', borderRadius: '9999px', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', boxShadow: '0 6px 18px rgba(124,58,237,0.4)' }}>
+            <CheckIcon size={15} color="white" />
+            <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '0.85rem', color: 'white' }}>Save Home</span>
+          </motion.button>
+        )}
+
+        {/* Toast */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+                background: 'rgba(31,41,55,0.92)', color: 'white', borderRadius: '9999px', padding: '7px 15px',
+                fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              {toast}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ===== Category tabs + item tray ===== */}
+      {!peek && (
+        <div style={{ flexShrink: 0, padding: '0.5rem 0 0.4rem' }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', padding: '0 12px 6px', WebkitOverflowScrolling: 'touch' }}>
+            {CATEGORIES.map((c) => {
+              const active = category === c.id
+              return (
+                <motion.button key={c.id} onClick={() => setCategory(c.id)} whileTap={{ scale: 0.95 }}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 13px', borderRadius: '9999px', cursor: 'pointer',
+                    background: active ? 'linear-gradient(135deg,#8B5CF6,#7C3AED)' : 'white',
+                    border: active ? 'none' : '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: active ? '0 4px 12px rgba(124,58,237,0.3)' : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <span style={{ fontSize: '0.85rem' }}>{c.emoji}</span>
+                  <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.75rem', color: active ? 'white' : '#6B7280' }}>{c.label}</span>
+                </motion.button>
+              )
+            })}
+          </div>
+
+          {/* Tray */}
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '4px 12px 6px', WebkitOverflowScrolling: 'touch', minHeight: '78px' }}>
+            <Tray
+              category={category}
+              isItemOwned={isItemOwned}
+              ownedPetIds={ownedPetIds}
+              wallStyle={wallStyle} floorStyle={floorStyle}
+              onPlace={placeNew}
+              onSetWall={(id) => { setWallStyle(id); showToast('Wall updated 🎨') }}
+              onSetFloor={(id) => { setFloorStyle(id); showToast('Floor updated 🧱') }}
+              onLocked={(hint) => showToast(hint || 'Win this in an Adventure!')}
+            />
+          </div>
+
+          {/* Hint line */}
+          <p style={{ textAlign: 'center', fontFamily: "'Nunito', sans-serif", fontSize: '0.68rem', fontWeight: 700, color: '#A78BFA', margin: '0 0 2px' }}>
+            {category === 'pets' ? '🐾 Tap a friend to bring them home' :
+             category === 'walls' || category === 'floors' ? '🎨 Tap to redecorate your room' :
+             '✨ Tap an item to place it, then drag to arrange'}
+          </p>
         </div>
       )}
-
-      {/* Inventory drawer */}
-      <AnimatePresence>
-        {showInventory && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 z-40"
-              style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}
-              onClick={() => setShowInventory(false)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="absolute bottom-0 inset-x-0 z-50"
-              style={{
-                borderRadius: '24px 24px 0 0', padding: '1.25rem',
-                background: 'rgba(255,255,255,0.95)', borderTop: '1px solid rgba(0,0,0,0.06)',
-                maxHeight: '50vh', boxShadow: '0 -4px 24px rgba(0,0,0,0.08)',
-              }}>
-              <div style={{ width: '40px', height: '4px', borderRadius: '2px', margin: '0 auto 1rem', background: 'rgba(0,0,0,0.1)' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h3 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem', color: '#1F2937', margin: 0 }}>Backpack</h3>
-                <motion.button onClick={() => setShowInventory(false)}
-                  whileTap={{ scale: 0.9 }}
-                  style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }}>
-                  <CloseIcon size={12} color="#6B7280" />
-                </motion.button>
-              </div>
-
-              {unplacedItems.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', overflowY: 'auto' }}>
-                  {unplacedItems.map((item, i) => (
-                    <motion.button key={item.id} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                      transition={{ delay: i * 0.05, type: 'spring' }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => placeFurniture(activeRoom, item.id)}
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px',
-                        borderRadius: '14px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                      }}>
-                      <FurnitureIcon type={item.icon || 'plant'} size={24} color="#6B7280" />
-                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: '#6B7280', marginTop: '4px', textAlign: 'center' }}>{item.name}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                  <BackpackIcon size={32} color="#D1D5DB" />
-                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 700, color: '#9CA3AF', marginTop: '8px' }}>No furniture for this room yet!</p>
-                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#D1D5DB', marginTop: '4px' }}>Complete missions to earn furniture</p>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   )
+}
+
+function RoundBtn({ children, onClick, disabled }) {
+  return (
+    <motion.button whileTap={disabled ? {} : { scale: 0.9 }} onClick={onClick} disabled={disabled}
+      style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'white', border: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)', opacity: disabled ? 0.6 : 1 }}>
+      {children}
+    </motion.button>
+  )
+}
+
+function TrayTile({ owned, emoji, label, active, dim, onClick, treasure }) {
+  return (
+    <motion.button onClick={onClick} whileTap={{ scale: 0.9 }}
+      style={{ flexShrink: 0, width: '66px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+        padding: '7px 4px', borderRadius: '14px', cursor: 'pointer', position: 'relative',
+        background: active ? 'linear-gradient(135deg,#EDE9FE,#DDD6FE)' : 'white',
+        border: active ? '2px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      {treasure && owned && (
+        <span style={{ position: 'absolute', top: 2, right: 4, fontSize: '0.6rem' }}>⭐</span>
+      )}
+      <div style={{ fontSize: '1.7rem', lineHeight: 1, filter: dim ? 'grayscale(1) opacity(0.45)' : 'none' }}>{emoji}</div>
+      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: dim ? '#9CA3AF' : '#4B5563', textAlign: 'center', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        {label}
+      </span>
+      {dim && (
+        <span style={{ position: 'absolute', top: 4, left: 5 }}><LockIcon size={11} color="#9CA3AF" /></span>
+      )}
+      {active && (
+        <span style={{ position: 'absolute', bottom: 3, right: 5 }}><CheckIcon size={11} color="#7C3AED" /></span>
+      )}
+    </motion.button>
+  )
+}
+
+function Tray({ category, isItemOwned, ownedPetIds, wallStyle, floorStyle, onPlace, onSetWall, onSetFloor, onLocked }) {
+  if (category === 'walls') {
+    return Object.values(WALLS).map((w) => (
+      <button key={w.id} onClick={() => onSetWall(w.id)}
+        style={{ flexShrink: 0, width: '66px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '6px 4px', borderRadius: '14px', cursor: 'pointer', background: 'white', border: wallStyle === w.id ? '2px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: w.swatch, border: '1px solid rgba(0,0,0,0.08)' }} />
+        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: '#4B5563' }}>{w.name}</span>
+        {wallStyle === w.id && <span style={{ position: 'absolute', top: 4, right: 5 }}><CheckIcon size={11} color="#7C3AED" /></span>}
+      </button>
+    ))
+  }
+  if (category === 'floors') {
+    return Object.values(FLOORS).map((f) => (
+      <button key={f.id} onClick={() => onSetFloor(f.id)}
+        style={{ flexShrink: 0, width: '66px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '6px 4px', borderRadius: '14px', cursor: 'pointer', background: 'white', border: floorStyle === f.id ? '2px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: f.floor, backgroundColor: f.base, border: '1px solid rgba(0,0,0,0.08)' }} />
+        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: '#4B5563' }}>{f.name}</span>
+        {floorStyle === f.id && <span style={{ position: 'absolute', top: 4, right: 5 }}><CheckIcon size={11} color="#7C3AED" /></span>}
+      </button>
+    ))
+  }
+  if (category === 'pets') {
+    const pets = allPets()
+    return pets.map((pet) => {
+      const owned = ownedPetIds.has(pet.id)
+      return (
+        <TrayTile key={pet.id} owned={owned} dim={!owned} emoji={owned ? pet.emoji : '❓'} label={owned ? pet.name : 'Locked'}
+          onClick={() => owned ? onPlace(pet.id, 'pet') : onLocked(pet.hint)} />
+      )
+    })
+  }
+  // furniture / decor
+  const items = itemsByCategory(category)
+  // owned first, then locked
+  const sorted = [...items].sort((a, b) => (isItemOwned(b) ? 1 : 0) - (isItemOwned(a) ? 1 : 0))
+  return sorted.map((item) => {
+    const owned = isItemOwned(item)
+    return (
+      <TrayTile key={item.id} owned={owned} dim={!owned} treasure={item.treasure}
+        emoji={item.emoji} label={owned ? item.name : 'Locked'}
+        onClick={() => owned ? onPlace(item.id, 'item') : onLocked('Win this in an Adventure! 🗺️')} />
+    )
+  })
 }

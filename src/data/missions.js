@@ -23,7 +23,7 @@ export const missions = {
         image: '/assets/stories/whisperwood-meadow.png',
         type: 'choice',
         choices: [
-          { text: 'Help the duckling!', next: 'help-duck', reward: { xp: 25, stars: 1, badge: { id: 'duck-helper', name: 'Duck Helper', icon: 'duck' } } },
+          { text: 'Help the duckling!', next: 'help-duck', reward: { xp: 25, stars: 1, badge: { id: 'duck-helper', name: 'Duck Helper', icon: 'duck' }, pet: { id: 'duck', name: 'Waddles', emoji: '🦆' } } },
           { text: 'Keep walking', next: 'bridge' },
         ],
       },
@@ -71,6 +71,7 @@ export const missions = {
           xp: 50, stars: 3,
           gear: { id: 'golden-acorn', name: 'Golden Acorn' },
           furniture: { id: 'acorn-trophy', name: 'Acorn Trophy Shelf', room: 'livingRoom' },
+          pet: { id: 'fox', name: 'Pip', emoji: '🦊' },
         },
       },
     ],
@@ -99,7 +100,7 @@ export const missions = {
         image: '/assets/stories/ocean-kingdom.png',
         type: 'choice',
         choices: [
-          { text: 'Help find the shell!', next: 'octopus-help', reward: { xp: 25, stars: 1, badge: { id: 'shell-finder', name: 'Shell Finder' } } },
+          { text: 'Help find the shell!', next: 'octopus-help', reward: { xp: 25, stars: 1, badge: { id: 'shell-finder', name: 'Shell Finder' }, pet: { id: 'octopus', name: 'Inky', emoji: '🐙' } } },
           { text: 'Ask the fish if they saw it', next: 'octopus-help' },
         ],
       },
@@ -135,6 +136,7 @@ export const missions = {
           xp: 50, stars: 3,
           gear: { id: 'friendship-pearl', name: 'Pearl of Friendship' },
           furniture: { id: 'pearl-fountain', name: 'Pearl Fountain', room: 'garden' },
+          pet: { id: 'turtle', name: 'Shelly', emoji: '🐢' },
         },
       },
     ],
@@ -170,7 +172,7 @@ export const missions = {
         image: '/assets/stories/castle.png',
         type: 'choice',
         choices: [
-          { text: 'Help the dragon find its friend!', next: 'dragon-help', reward: { xp: 30, stars: 1, badge: { id: 'dragon-pal', name: 'Dragon Pal' } } },
+          { text: 'Help the dragon find its friend!', next: 'dragon-help', reward: { xp: 30, stars: 1, badge: { id: 'dragon-pal', name: 'Dragon Pal' }, pet: { id: 'dragon', name: 'Ember', emoji: '🐉' } } },
         ],
       },
       {
@@ -197,6 +199,7 @@ export const missions = {
           xp: 60, stars: 3,
           gear: { id: 'kindness-crown', name: 'Crown of Kindness' },
           furniture: { id: 'star-throne', name: 'Star Throne', room: 'bedroom' },
+          pet: { id: 'dragon', name: 'Ember', emoji: '🐉' },
         },
       },
     ],
