@@ -7,7 +7,8 @@ import {
   getHouseItem, getPetDef, getWall, getFloor,
   itemsByCategory, allPets,
 } from '../data/houseItems'
-import { BackArrowIcon, StarIcon, HeartIcon, BoltIcon, LeafIcon, CloseIcon, CheckIcon, LockIcon } from '../components/SVGIcons'
+import { BackArrowIcon, StarIcon, HeartIcon, BoltIcon, LeafIcon, CloseIcon, CheckIcon, LockIcon, ArmchairIcon, BoxIcon } from '../components/SVGIcons'
+import { ItemArt } from '../components/HouseArt'
 
 // Floor band (as % of the room box). Items live on the floor and scale with depth.
 const FLOOR_TOP = 58
@@ -28,6 +29,29 @@ function RedoIcon({ size = 16, color = '#6B7280' }) {
       <path d="M21 7v6h-6" /><path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
     </svg>
   )
+}
+function PawIcon({ size = 16, color = '#6B7280' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <circle cx="6" cy="10" r="2.2" /><circle cx="10" cy="6" r="2.2" /><circle cx="14" cy="6" r="2.2" /><circle cx="18" cy="10" r="2.2" />
+      <path d="M12 12c-3 0-5 2.2-5 4.5C7 18.5 9 20 12 20s5-1.5 5-3.5C17 14.2 15 12 12 12z" />
+    </svg>
+  )
+}
+function PaintIcon({ size = 16, color = '#6B7280' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h1.5A3.5 3.5 0 0 0 20 10c0-3.9-3.6-7-8-7z" />
+      <circle cx="7.5" cy="10.5" r="1" fill={color} /><circle cx="12" cy="7.5" r="1" fill={color} /><circle cx="16" cy="10.5" r="1" fill={color} />
+    </svg>
+  )
+}
+function TabIcon({ id, color }) {
+  if (id === 'furniture') return <ArmchairIcon size={15} color={color} />
+  if (id === 'pets') return <PawIcon size={15} color={color} />
+  if (id === 'decor') return <LeafIcon size={15} color={color} />
+  if (id === 'walls') return <PaintIcon size={15} color={color} />
+  return <BoxIcon size={15} color={color} />
 }
 
 // The fixed painted "dollhouse" frame: peaked shingle roof, wooden gable + round
@@ -111,9 +135,11 @@ function HouseShell({ wall, floor }) {
       </div>
 
       {/* Hanging plant from the eave */}
-      <div style={{ position: 'absolute', right: '24%', top: '34.5%', width: '11%', textAlign: 'center' }}>
-        <div style={{ width: '1px', height: '14px', background: 'rgba(120,80,40,0.4)', margin: '0 auto' }} />
-        <div style={{ fontSize: '20px', lineHeight: 1 }}>🪴</div>
+      <div style={{ position: 'absolute', right: '25%', top: '34%', width: '11%', textAlign: 'center' }}>
+        <div style={{ width: '1px', height: '12px', background: 'rgba(120,80,40,0.4)', margin: '0 auto' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', transform: 'scaleY(-1)' }}>
+          <ItemArt id="potted-plant" size={26} />
+        </div>
       </div>
 
       {/* Wooden corner posts framing the house */}
@@ -181,7 +207,7 @@ export default function HouseScreen({ navigate }) {
     record(placedItems)
     const uid = placeHouseItem({ itemId, kind, x: 50, y: 68 })
     setSelectedUid(uid)
-    showToast('Placed! Drag to arrange ✨')
+    showToast('Placed! Drag to arrange')
   }
 
   const remove = (uid) => {
@@ -246,7 +272,7 @@ export default function HouseScreen({ navigate }) {
 
   const saveHome = () => {
     setSelectedUid(null)
-    showToast('Home saved! 🏡')
+    showToast('Home saved!')
   }
 
   const wall = getWall(wallStyle)
@@ -323,7 +349,7 @@ export default function HouseScreen({ navigate }) {
           if (!def) return null
           const live = livePos && livePos.uid === p.uid ? livePos : p
           const ds = depthScale(live.y)
-          const size = 42 * (def.scale || 1) * ds
+          const size = 54 * (def.scale || 1) * ds
           const isSel = selectedUid === p.uid
           return (
             <div key={p.uid}
@@ -343,14 +369,11 @@ export default function HouseScreen({ navigate }) {
               )}
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 14 }}
-                style={{
-                  fontSize: `${size}px`, lineHeight: 1,
-                  filter: `drop-shadow(0 4px 4px rgba(0,0,0,0.25))${isSel ? ' drop-shadow(0 0 6px rgba(139,92,246,0.9))' : ''}`,
-                }}>
-                {def.emoji}
+                style={{ display: 'flex', justifyContent: 'center' }}>
+                <ItemArt id={p.itemId} size={size} glow={isSel} />
               </motion.div>
               {/* ground shadow */}
-              <div style={{ width: `${size * 0.7}px`, height: `${size * 0.16}px`, borderRadius: '50%', background: 'rgba(0,0,0,0.16)', filter: 'blur(3px)', margin: '-2px auto 0' }} />
+              <div style={{ width: `${size * 0.6}px`, height: `${size * 0.14}px`, borderRadius: '50%', background: 'rgba(0,0,0,0.16)', filter: 'blur(3px)', margin: '-3px auto 0' }} />
             </div>
           )
         })}
@@ -421,7 +444,7 @@ export default function HouseScreen({ navigate }) {
                     background: active ? 'linear-gradient(135deg,#8B5CF6,#7C3AED)' : 'white',
                     border: active ? 'none' : '1px solid rgba(0,0,0,0.06)',
                     boxShadow: active ? '0 4px 12px rgba(124,58,237,0.3)' : '0 1px 4px rgba(0,0,0,0.04)' }}>
-                  <span style={{ fontSize: '0.85rem' }}>{c.emoji}</span>
+                  <TabIcon id={c.id} color={active ? 'white' : '#8B5CF6'} />
                   <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.75rem', color: active ? 'white' : '#6B7280' }}>{c.label}</span>
                 </motion.button>
               )
@@ -436,17 +459,17 @@ export default function HouseScreen({ navigate }) {
               ownedPetIds={ownedPetIds}
               wallStyle={wallStyle} floorStyle={floorStyle}
               onPlace={placeNew}
-              onSetWall={(id) => { setWallStyle(id); showToast('Wall updated 🎨') }}
-              onSetFloor={(id) => { setFloorStyle(id); showToast('Floor updated 🧱') }}
+              onSetWall={(id) => { setWallStyle(id); showToast('Wall updated') }}
+              onSetFloor={(id) => { setFloorStyle(id); showToast('Floor updated') }}
               onLocked={(hint) => showToast(hint || 'Win this in an Adventure!')}
             />
           </div>
 
           {/* Hint line */}
           <p style={{ textAlign: 'center', fontFamily: "'Nunito', sans-serif", fontSize: '0.68rem', fontWeight: 700, color: '#A78BFA', margin: '0 0 2px' }}>
-            {category === 'pets' ? '🐾 Tap a friend to bring them home' :
-             category === 'walls' || category === 'floors' ? '🎨 Tap to redecorate your room' :
-             '✨ Tap an item to place it, then drag to arrange'}
+            {category === 'pets' ? 'Tap a friend to bring them home' :
+             category === 'walls' || category === 'floors' ? 'Tap to redecorate your room' :
+             'Tap an item to place it, then drag to arrange'}
           </p>
         </div>
       )}
@@ -465,7 +488,7 @@ function RoundBtn({ children, onClick, disabled }) {
   )
 }
 
-function TrayTile({ owned, emoji, label, active, dim, onClick, treasure }) {
+function TrayTile({ itemId, label, active, dim, mystery, onClick, treasure }) {
   return (
     <motion.button onClick={onClick} whileTap={{ scale: 0.9 }}
       style={{ flexShrink: 0, width: '66px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
@@ -473,10 +496,18 @@ function TrayTile({ owned, emoji, label, active, dim, onClick, treasure }) {
         background: active ? 'linear-gradient(135deg,#EDE9FE,#DDD6FE)' : 'white',
         border: active ? '2px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-      {treasure && owned && (
-        <span style={{ position: 'absolute', top: 2, right: 4, fontSize: '0.6rem' }}>⭐</span>
+      {treasure && !dim && (
+        <span style={{ position: 'absolute', top: 3, right: 4 }}><StarIcon size={10} color="#FBBF24" /></span>
       )}
-      <div style={{ fontSize: '1.7rem', lineHeight: 1, filter: dim ? 'grayscale(1) opacity(0.45)' : 'none' }}>{emoji}</div>
+      <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', filter: dim && !mystery ? 'grayscale(0.9) opacity(0.5)' : 'none' }}>
+        {mystery ? (
+          <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '1.2rem', color: '#C4B5FD' }}>?</span>
+          </div>
+        ) : (
+          <ItemArt id={itemId} size={38} />
+        )}
+      </div>
       <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: dim ? '#9CA3AF' : '#4B5563', textAlign: 'center', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
         {label}
       </span>
@@ -516,7 +547,7 @@ function Tray({ category, isItemOwned, ownedPetIds, wallStyle, floorStyle, onPla
     return pets.map((pet) => {
       const owned = ownedPetIds.has(pet.id)
       return (
-        <TrayTile key={pet.id} owned={owned} dim={!owned} emoji={owned ? pet.emoji : '❓'} label={owned ? pet.name : 'Locked'}
+        <TrayTile key={pet.id} itemId={pet.id} dim={!owned} mystery={!owned} label={owned ? pet.name : 'Locked'}
           onClick={() => owned ? onPlace(pet.id, 'pet') : onLocked(pet.hint)} />
       )
     })
@@ -528,9 +559,9 @@ function Tray({ category, isItemOwned, ownedPetIds, wallStyle, floorStyle, onPla
   return sorted.map((item) => {
     const owned = isItemOwned(item)
     return (
-      <TrayTile key={item.id} owned={owned} dim={!owned} treasure={item.treasure}
-        emoji={item.emoji} label={owned ? item.name : 'Locked'}
-        onClick={() => owned ? onPlace(item.id, 'item') : onLocked('Win this in an Adventure! 🗺️')} />
+      <TrayTile key={item.id} itemId={item.id} dim={!owned} treasure={item.treasure}
+        label={owned ? item.name : 'Locked'}
+        onClick={() => owned ? onPlace(item.id, 'item') : onLocked('Win this in an Adventure!')} />
     )
   })
 }
