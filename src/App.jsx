@@ -14,6 +14,7 @@ import StorybookScreen from './screens/StorybookScreen'
 import MissionPlayScreen from './screens/MissionPlayScreen'
 import AIStoryScreen from './screens/AIStoryScreen'
 import ProfileScreen from './screens/ProfileScreen'
+import CustomizeScreen from './screens/CustomizeScreen'
 
 // Screens that should NOT show the bottom nav
 const noNavScreens = new Set(['welcome', 'login', 'characterSelect', 'storyPlay', 'missionPlay'])
@@ -34,6 +35,7 @@ const screenToTab = {
   house: 'house',
   profile: 'profile',
   aiStory: 'story',
+  customize: 'profile',
 }
 
 const screens = {
@@ -48,6 +50,7 @@ const screens = {
   house: HouseScreen,
   aiStory: AIStoryScreen,
   profile: ProfileScreen,
+  customize: CustomizeScreen,
 }
 
 export default function App() {

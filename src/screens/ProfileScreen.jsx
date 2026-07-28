@@ -6,8 +6,10 @@ import { getCharacter } from '../data/characters'
 import {
   UserIcon, SettingsIcon, LogoutIcon, StarIcon,
   VoiceOnIcon, VoiceOffIcon, RefreshIcon, ShieldIcon,
-  BoltIcon, BookIcon, CompassIcon, TrophyIcon
+  BoltIcon, BookIcon, CompassIcon, TrophyIcon, ChevronRightIcon, SparkleIcon
 } from '../components/SVGIcons'
+import { CompanionAvatar } from '../components/CompanionArt'
+import { companionDisplayName, companionColor } from '../data/companion'
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
@@ -21,9 +23,12 @@ export default function ProfileScreen({ navigate }) {
   const {
     childName, selectedCharacter, level, xp, stars, badges,
     voiceEnabled, setVoiceEnabled, speechRate, setSpeechRate, resetProgress,
-    readingLevel, setReadingLevel,
+    readingLevel, setReadingLevel, companionHat,
   } = useGameStore()
+  const store = useGameStore()
   const character = getCharacter(selectedCharacter)
+  const guideName = companionDisplayName(store)
+  const guideColor = companionColor(store)
   const { logout, isGuest, parentEmail } = useAuthStore()
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -72,22 +77,27 @@ export default function ProfileScreen({ navigate }) {
           boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: '0.75rem',
         }}>
           <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ marginBottom: '0.75rem' }}>
-            <div style={{
-              width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto',
-              border: `3px solid ${character.color}40`,
-              boxShadow: `0 8px 24px ${character.color}20`,
-            }}>
-              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
+            style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
+            <CompanionAvatar character={character} size={78} color={guideColor} hat={companionHat} />
           </motion.div>
 
           <h2 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.3rem', color: '#1F2937', margin: 0 }}>
             {childName || 'Explorer'}
           </h2>
           <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0.75rem' }}>
-            Traveling with {character.name}
+            Traveling with {guideName}
           </p>
+
+          {/* Customize companion */}
+          <motion.button onClick={() => navigate('customize')} whileTap={{ scale: 0.98 }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '0.6rem 0.8rem', borderRadius: '14px', marginBottom: '0.75rem', cursor: 'pointer',
+              background: `linear-gradient(135deg, ${guideColor}18, ${guideColor}0c)`, border: `1px solid ${guideColor}30` }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: `${guideColor}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <SparkleIcon size={15} color={guideColor} />
+            </div>
+            <span style={{ flex: 1, textAlign: 'left', fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: '#1F2937' }}>Customize {guideName}</span>
+            <ChevronRightIcon size={16} color="#9CA3AF" />
+          </motion.button>
 
           {/* Level & XP bar */}
           <div style={{ background: 'rgba(0,0,0,0.03)', borderRadius: '12px', padding: '0.6rem 0.8rem', marginBottom: '0.75rem' }}>

@@ -9,6 +9,11 @@ const initialState = {
   selectedCharacter: null, // 'owl' | 'bear' | 'bunny'
   isOnboarded: false,
 
+  // Companion customization
+  companionName: '',        // child-given name for their guide
+  companionColor: '',       // '' => use the character's default color
+  companionHat: 'none',     // cosmetic hat id
+
   // Progression
   xp: 0,
   level: 1,
@@ -70,6 +75,11 @@ export const useGameStore = create(
       setChildName: (name) => set({ childName: name }),
       selectCharacter: (character) => set({ selectedCharacter: character }),
       completeOnboarding: () => set({ isOnboarded: true, lastActive: Date.now() }),
+
+      // Companion
+      setCompanionName: (companionName) => set({ companionName }),
+      setCompanionColor: (companionColor) => set({ companionColor }),
+      setCompanionHat: (companionHat) => set({ companionHat }),
 
       // XP & Leveling
       addXP: (amount) => {
@@ -184,7 +194,7 @@ export const useGameStore = create(
       setSpeechRate: (rate) => set({ speechRate: rate }),
 
       // Reset
-      resetProgress: () => set({ ...initialState, isOnboarded: true, childName: get().childName, selectedCharacter: get().selectedCharacter }),
+      resetProgress: () => set({ ...initialState, isOnboarded: true, childName: get().childName, selectedCharacter: get().selectedCharacter, companionName: get().companionName, companionColor: get().companionColor, companionHat: get().companionHat }),
     }),
     {
       name: 'moral-game-storage',

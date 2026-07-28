@@ -5,6 +5,7 @@ import { getCharacter } from '../data/characters'
 import { StarIcon, ShieldIcon, ArmchairIcon, BellIcon, PlayIcon, PlusIcon, CloseIcon } from '../components/SVGIcons'
 import { DreamyBackground, FeatureIcon, BadgeArt } from '../components/AppArt'
 import { getBadgeMeta } from '../data/badges'
+import { CompanionAvatar } from '../components/CompanionArt'
 
 const formatEarned = (ts) => {
   if (!ts) return 'Earned recently'
@@ -15,8 +16,9 @@ const formatEarned = (ts) => {
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
 export default function HomeScreen({ navigate }) {
-  const { childName, selectedCharacter, level, xp, stars, badges, gear } = useGameStore()
+  const { childName, selectedCharacter, level, xp, stars, badges, gear, companionName, companionColor, companionHat } = useGameStore()
   const character = getCharacter(selectedCharacter)
+  const guideColor = companionColor || character.color
   const [selectedBadge, setSelectedBadge] = useState(null)
   const recentBadges = [...badges].slice(-8).reverse()
   const currentLevelXP = XP_PER_LEVEL[level - 1] || 0
@@ -34,19 +36,16 @@ export default function HomeScreen({ navigate }) {
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden',
-            border: `2px solid ${character.color}40`,
-            boxShadow: `0 4px 12px ${character.color}20`,
-          }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
+          <motion.button onClick={() => navigate('customize')} whileTap={{ scale: 0.92 }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 }} aria-label="Customize companion">
+            <CompanionAvatar character={character} size={44} color={guideColor} hat={companionHat} />
+          </motion.button>
           <div>
             <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1rem', color: '#1F2937', lineHeight: 1.2, margin: 0 }}>
               Hello, {displayName}!
             </p>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', fontWeight: 700, color: '#8B5CF6', margin: 0 }}>
-              Level {level}
+              Level {level}{companionName ? ` · with ${companionName}` : ''}
             </p>
           </div>
         </div>
@@ -258,18 +257,17 @@ export default function HomeScreen({ navigate }) {
       {/* Badge detail popup */}
       <AnimatePresence>
         {selectedBadge && (
-          <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedBadge(null)}
+            style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(45,27,105,0.35)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}
+          >
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedBadge(null)}
-              style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(45,27,105,0.35)', backdropFilter: 'blur(6px)' }}
-            />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0 }}
+              initial={{ scale: 0.85, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', damping: 16 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 61,
-                width: '84%', maxWidth: '340px', textAlign: 'center',
+                position: 'relative', width: '100%', maxWidth: '340px', textAlign: 'center',
                 background: 'rgba(255,255,255,0.98)', borderRadius: '26px', padding: '1.75rem 1.5rem 1.5rem',
                 boxShadow: '0 24px 60px rgba(76,29,149,0.28)', border: '1px solid rgba(255,255,255,0.8)',
               }}
@@ -295,7 +293,7 @@ export default function HomeScreen({ navigate }) {
                 )
               })()}
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

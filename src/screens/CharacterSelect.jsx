@@ -4,6 +4,8 @@ import { useGameStore } from '../stores/gameStore'
 import { characters } from '../data/characters'
 import { speak } from '../utils/voice'
 import { StarIcon, ChevronRightIcon, SparkleIcon, CheckIcon, VoiceOnIcon, BookIcon, TrophyIcon } from '../components/SVGIcons'
+import { CompanionAvatar } from '../components/CompanionArt'
+import { SUGGESTED_NAMES } from '../data/companion'
 
 const guideGradients = {
   owl: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
@@ -33,8 +35,9 @@ export default function CharacterSelect({ navigate }) {
   const [step, setStep] = useState('name')
   const [name, setName] = useState('')
   const [selected, setSelected] = useState(null)
+  const [companion, setCompanion] = useState('')
   const [readingChoice, setReadingChoice] = useState(null)
-  const { setChildName, selectCharacter, completeOnboarding, setReadingLevel } = useGameStore()
+  const { setChildName, selectCharacter, completeOnboarding, setReadingLevel, setCompanionName } = useGameStore()
 
   const handleNameSubmit = () => {
     if (name.trim().length > 0) {
@@ -52,8 +55,14 @@ export default function CharacterSelect({ navigate }) {
   const handleCharacterNext = () => {
     if (selected) {
       selectCharacter(selected)
-      setStep('reading')
+      setStep('companion')
     }
+  }
+
+  const handleCompanionNext = () => {
+    const finalName = companion.trim() || characters[selected].name
+    setCompanionName(finalName)
+    setStep('reading')
   }
 
   const handleFinish = () => {
@@ -237,6 +246,58 @@ export default function CharacterSelect({ navigate }) {
               style={{ opacity: selected ? 1 : 0.4 }}
             >
               {selected ? `Let's go with ${characters[selected].name}!` : 'Pick a guide first'}
+            </button>
+          </motion.div>
+        ) : step === 'companion' ? (
+          <motion.div
+            key="companion"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="w-full max-w-sm flex flex-col items-center flex-1"
+          >
+            <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.4, repeat: Infinity }} className="mb-3 mt-2">
+              <CompanionAvatar character={selected} size={110} />
+            </motion.div>
+
+            <div className="text-center mb-4">
+              <h2 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '1.5rem', color: '#4C1D95', margin: 0 }}>
+                Name your {characters[selected]?.name}!
+              </h2>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.82rem', color: '#6B7280', margin: '4px 0 0' }}>
+                Your guide will travel every adventure with you.
+              </p>
+            </div>
+
+            <input
+              type="text"
+              value={companion}
+              onChange={(e) => setCompanion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCompanionNext()}
+              placeholder={`e.g. ${SUGGESTED_NAMES[selected]?.[0] || 'Buddy'}`}
+              autoFocus
+              maxLength={16}
+              className="glass-input"
+              style={{ textAlign: 'center', marginBottom: '0.9rem' }}
+            />
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '1.5rem' }}>
+              {(SUGGESTED_NAMES[selected] || []).map((n) => (
+                <motion.button key={n} whileTap={{ scale: 0.94 }} onClick={() => setCompanion(n)}
+                  style={{
+                    padding: '6px 14px', borderRadius: '9999px', cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', fontWeight: 700,
+                    background: companion.trim() === n ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.7)',
+                    border: companion.trim() === n ? '1.5px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)',
+                    color: companion.trim() === n ? '#7C3AED' : '#6B7280',
+                  }}>
+                  {n}
+                </motion.button>
+              ))}
+            </div>
+
+            <button className="btn btn-primary" onClick={handleCompanionNext}>
+              {companion.trim() ? `Meet ${companion.trim()}!` : `Continue with ${characters[selected]?.name}`}
             </button>
           </motion.div>
         ) : (
