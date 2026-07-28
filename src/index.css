@@ -1,0 +1,312 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  --green: #58cc02;
+  --green-dark: #46a302;
+  --green-deeper: #3d8b02;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --red: #ff4b4b;
+  --orange: #ff9600;
+  --orange-dark: #e08600;
+  --purple: #6a3aff;
+  --pink: #ff86d0;
+  --yellow: #ffc800;
+  --gold: #ffcc00;
+  --bg: #131f24;
+  --bg-light: #1a2e35;
+  --card: #ffffff;
+  --text: #3c3c3c;
+  --text-light: #777;
+  --sky: #4bcaff;
+  --sky-dark: #2b97d9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.font-display { font-family: 'Baloo 2', cursive; }
+
+.app-shell {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === Duolingo-style buttons === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 1rem;
+  font-family: 'Baloo 2', cursive;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.btn-green {
+  background: var(--green);
+  color: white;
+  border-bottom: 4px solid var(--green-dark);
+  box-shadow: 0 6px 0 var(--green-deeper), 0 8px 15px rgba(88,204,2,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.btn-green:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  box-shadow: 0 3px 0 var(--green-deeper), 0 4px 8px rgba(88,204,2,0.15);
+}
+
+.btn-blue {
+  background: var(--blue);
+  color: white;
+  border-bottom: 4px solid var(--blue-dark);
+  box-shadow: 0 6px 0 #1285b8, 0 8px 15px rgba(28,176,246,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.btn-blue:active { transform: translateY(3px); border-bottom-width: 1px; box-shadow: 0 3px 0 #1285b8; }
+
+.btn-outline {
+  background: white;
+  color: var(--blue);
+  border: 2px solid var(--blue);
+  border-bottom: 4px solid var(--blue);
+  box-shadow: 0 6px 0 rgba(28,176,246,0.3);
+}
+.btn-outline:active { transform: translateY(3px); border-bottom-width: 2px; box-shadow: 0 3px 0 rgba(28,176,246,0.2); }
+
+.btn-orange {
+  background: var(--orange);
+  color: white;
+  border-bottom: 4px solid var(--orange-dark);
+  box-shadow: 0 6px 0 #cc7700, 0 8px 15px rgba(255,150,0,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.btn-orange:active { transform: translateY(3px); border-bottom-width: 1px; box-shadow: 0 3px 0 #cc7700; }
+
+.btn-gold {
+  background: linear-gradient(135deg, #ffd700, #ffb800);
+  color: #5a3e00;
+  border-bottom: 4px solid #cc9200;
+  box-shadow: 0 6px 0 #a07500, 0 8px 15px rgba(255,200,0,0.3);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+.btn-gold:active { transform: translateY(3px); border-bottom-width: 1px; box-shadow: 0 3px 0 #a07500; }
+
+/* === Duolingo-style choice cards === */
+.choice-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: white;
+  border: 2px solid #e5e5e5;
+  border-bottom: 4px solid #d8d8d8;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  font-family: 'Nunito', sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+.choice-card:active { transform: translateY(3px); border-bottom-width: 2px; box-shadow: none; }
+.choice-card.selected {
+  border-color: var(--blue);
+  background: #e3f6ff;
+  box-shadow: 0 2px 8px rgba(28,176,246,0.2);
+}
+.choice-card.correct {
+  border-color: var(--green);
+  background: #d7ffb8;
+  box-shadow: 0 2px 8px rgba(88,204,2,0.2);
+}
+.choice-card.wrong {
+  border-color: var(--red);
+  background: #ffdfe0;
+  box-shadow: 0 2px 8px rgba(255,75,75,0.2);
+}
+
+/* === Boddle-style world card === */
+.world-card {
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 5px solid rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.world-card:active { transform: translateY(3px); border-bottom-width: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+/* === Animations === */
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.12); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(60px) rotate(360deg); opacity: 0; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(88,204,2,0.3); }
+  50% { box-shadow: 0 0 24px rgba(88,204,2,0.6); }
+}
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+@keyframes pop-in {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes voice-wave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+@keyframes glow-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(88,204,2,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(88,204,2,0); }
+}
+
+.animate-bounce-in { animation: bounce-in 0.5s ease-out forwards; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.5s ease-in-out; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-sparkle { animation: sparkle 2s ease-in-out infinite; }
+.animate-glow-ring { animation: glow-ring 2s ease-in-out infinite; }
+
+/* === Progress bar (Duolingo style) === */
+.progress-bar-track {
+  height: 16px;
+  background: #2b3f48;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #3d5560;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), #7de03b);
+  border-radius: 8px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 50%);
+  border-radius: 8px;
+}
+
+/* === Speech bubble === */
+.speech-bubble {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 4px solid #e0e0e0;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 18px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 12px solid white;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* === Safe areas === */
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.safe-top { padding-top: max(0.5rem, env(safe-area-inset-top)); }
+
+/* === Decorative backgrounds === */
+.bg-stars {
+  background-image:
+    radial-gradient(2px 2px at 20% 15%, rgba(255,255,255,0.15), transparent),
+    radial-gradient(2px 2px at 80% 25%, rgba(255,255,255,0.1), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(255,255,255,0.12), transparent),
+    radial-gradient(1.5px 1.5px at 15% 65%, rgba(255,255,255,0.08), transparent),
+    radial-gradient(2px 2px at 85% 75%, rgba(255,255,255,0.1), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.12), transparent),
+    radial-gradient(1.5px 1.5px at 65% 35%, rgba(255,255,255,0.06), transparent);
+}
+
+/* === 3D Card === */
+.card-3d {
+  background: white;
+  border: 2px solid #e8e8e8;
+  border-bottom: 5px solid #d5d5d5;
+  border-radius: 1.25rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}

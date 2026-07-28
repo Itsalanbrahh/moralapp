@@ -1,0 +1,40 @@
+export const characters = {
+  owl: {
+    id: 'owl',
+    name: 'Owl',
+    image: '/assets/characters/owl.png',
+    title: 'Wise Storyteller',
+    color: '#6a3aff',
+    colorLight: '#8b6aff',
+    greeting: "Hoo-hoo! Welcome, young one. I have so many stories to share with you. Shall we begin?",
+    personality: 'wise, calm, thoughtful',
+    voicePitch: 0.8,
+    voiceRate: 0.85,
+  },
+  bear: {
+    id: 'bear',
+    name: 'Bear',
+    image: '/assets/characters/bear.png',
+    title: 'Warm Adventure Guide',
+    color: '#ff8a50',
+    colorLight: '#ffa070',
+    greeting: "Hey there, little buddy! Ready for an adventure? Let's go explore together!",
+    personality: 'warm, encouraging, brave',
+    voicePitch: 0.7,
+    voiceRate: 0.95,
+  },
+  bunny: {
+    id: 'bunny',
+    name: 'Bunny',
+    image: '/assets/characters/bunny.png',
+    title: 'Playful Quiz Buddy',
+    color: '#ff6b9d',
+    colorLight: '#ff8bb5',
+    greeting: "Hi hi hi! Oh this is SO exciting! I have the BEST story for you!",
+    personality: 'playful, curious, bouncy',
+    voicePitch: 1.2,
+    voiceRate: 1.05,
+  },
+}
+
+export const getCharacter = (id) => characters[id] || characters.owl
