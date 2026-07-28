@@ -3,13 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { characters } from '../data/characters'
 import { speak } from '../utils/voice'
-import { StarIcon, ChevronRightIcon, SparkleIcon } from '../components/SVGIcons'
+import { StarIcon, ChevronRightIcon, SparkleIcon, CheckIcon, VoiceOnIcon, BookIcon, TrophyIcon } from '../components/SVGIcons'
 
 const guideGradients = {
   owl: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
   bear: 'linear-gradient(135deg, #F59E0B, #F97316)',
   bunny: 'linear-gradient(135deg, #EC4899, #FBCFE8)',
 }
+
+const READING_LEVELS = [
+  { id: 'listen', title: 'Listen', subtitle: 'Not reading yet — hear the story aloud', Icon: VoiceOnIcon, color: '#3B82F6' },
+  { id: 'beginner', title: 'Read-Along', subtitle: 'Learning to read — words highlight as they’re read', Icon: BookIcon, color: '#10B981' },
+  { id: 'advanced', title: 'Reading Pro', subtitle: 'Confident reader — read it and take a quiz', Icon: TrophyIcon, color: '#8B5CF6' },
+]
 
 function FloatingStar({ x, y, size, delay }) {
   return (
@@ -27,7 +33,8 @@ export default function CharacterSelect({ navigate }) {
   const [step, setStep] = useState('name')
   const [name, setName] = useState('')
   const [selected, setSelected] = useState(null)
-  const { setChildName, selectCharacter, completeOnboarding } = useGameStore()
+  const [readingChoice, setReadingChoice] = useState(null)
+  const { setChildName, selectCharacter, completeOnboarding, setReadingLevel } = useGameStore()
 
   const handleNameSubmit = () => {
     if (name.trim().length > 0) {
@@ -42,9 +49,16 @@ export default function CharacterSelect({ navigate }) {
     speak(char.greeting, { pitch: char.voicePitch, rate: char.voiceRate })
   }
 
-  const handleConfirm = () => {
+  const handleCharacterNext = () => {
     if (selected) {
       selectCharacter(selected)
+      setStep('reading')
+    }
+  }
+
+  const handleFinish = () => {
+    if (readingChoice) {
+      setReadingLevel(readingChoice)
       completeOnboarding()
       navigate('home')
     }
@@ -121,7 +135,7 @@ export default function CharacterSelect({ navigate }) {
               Continue
             </button>
           </motion.div>
-        ) : (
+        ) : step === 'character' ? (
           <motion.div
             key="character"
             initial={{ opacity: 0, x: 30 }}
@@ -218,11 +232,80 @@ export default function CharacterSelect({ navigate }) {
 
             <button
               className="btn btn-primary"
-              onClick={handleConfirm}
+              onClick={handleCharacterNext}
               disabled={!selected}
               style={{ opacity: selected ? 1 : 0.4 }}
             >
               {selected ? `Let's go with ${characters[selected].name}!` : 'Pick a guide first'}
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="reading"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="w-full max-w-sm flex flex-col items-center flex-1"
+          >
+            {/* Guide mascot */}
+            <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2, repeat: Infinity }} className="mb-3 mt-2">
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${characters[selected]?.color || '#8B5CF6'}40`, boxShadow: '0 8px 24px rgba(139,92,246,0.15)' }}>
+                <img src={characters[selected]?.image || '/assets/characters/owl.png'} alt="Guide" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            </motion.div>
+
+            <div className="text-center mb-4">
+              <h2 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '1.4rem', color: '#1F2937', margin: 0 }}>
+                How does {name} read?
+              </h2>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: '#6B7280', margin: '4px 0 0' }}>
+                We’ll shape each story to fit — you can change this later.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full mb-4">
+              {READING_LEVELS.map((lvl, i) => {
+                const active = readingChoice === lvl.id
+                return (
+                  <motion.button
+                    key={lvl.id}
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08, type: 'spring', stiffness: 300 }}
+                    onClick={() => setReadingChoice(lvl.id)}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px', width: '100%',
+                      background: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.7)',
+                      backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                      borderRadius: '22px', padding: '0.85rem 1rem',
+                      border: active ? `2px solid ${lvl.color}` : '2px solid rgba(255,255,255,0.5)',
+                      boxShadow: active ? `0 6px 22px ${lvl.color}30` : '0 4px 20px rgba(0,0,0,0.06)',
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ width: '48px', height: '48px', borderRadius: '15px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? lvl.color : `${lvl.color}18` }}>
+                      <lvl.Icon size={22} color={active ? 'white' : lvl.color} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.05rem', color: '#1F2937', margin: 0, lineHeight: 1.2 }}>{lvl.title}</p>
+                      <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', color: '#6B7280', margin: '1px 0 0', lineHeight: 1.25 }}>{lvl.subtitle}</p>
+                    </div>
+                    <div style={{ width: '22px', flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+                      {active && <CheckIcon size={18} color={lvl.color} />}
+                    </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+
+            <button
+              className="btn btn-primary"
+              onClick={handleFinish}
+              disabled={!readingChoice}
+              style={{ opacity: readingChoice ? 1 : 0.4 }}
+            >
+              {readingChoice ? 'Start the Adventure!' : 'Pick a reading level'}
             </button>
           </motion.div>
         )}
