@@ -85,9 +85,11 @@ export const useGameStore = create(
 
       addStars: (amount) => set((s) => ({ stars: s.stars + amount })),
 
-      addBadge: (badge) => set((s) => ({
-        badges: s.badges.some(b => b.id === badge.id) ? s.badges : [...s.badges, badge]
-      })),
+      addBadge: (badge) => set((s) => (
+        s.badges.some(b => b.id === badge.id)
+          ? { badges: s.badges }
+          : { badges: [...s.badges, { ...badge, earnedAt: badge.earnedAt || Date.now() }] }
+      )),
 
       addGear: (item) => set((s) => ({
         gear: s.gear.some(g => g.id === item.id) ? s.gear : [...s.gear, item]

@@ -5,6 +5,7 @@ let currentUtterance = null
 export function speak(text, options = {}) {
   return new Promise((resolve) => {
     if (!window.speechSynthesis) { resolve(); return }
+    ensureUnlocked()
     window.speechSynthesis.cancel()
 
     const utterance = new SpeechSynthesisUtterance(text)
@@ -35,6 +36,8 @@ export function speak(text, options = {}) {
     utterance.onerror = resolve
     currentUtterance = utterance
     window.speechSynthesis.speak(utterance)
+    // iOS Safari sometimes leaves the queue paused; nudge it to actually play.
+    try { window.speechSynthesis.resume() } catch { /* noop */ }
   })
 }
 
@@ -96,8 +99,33 @@ export function isTTSSupported() {
   return !!window.speechSynthesis
 }
 
-// Preload voices (Chrome needs this)
+// Mobile browsers (esp. iOS Safari) block speech synthesis until it has been
+// triggered inside a user gesture. We "unlock" the engine on the very first tap
+// with a silent utterance; after that, narration triggered from timers/effects
+// (e.g. auto-play in Listen mode) works too.
+let speechUnlocked = false
+export function ensureUnlocked() {
+  if (speechUnlocked || typeof window === 'undefined' || !window.speechSynthesis) return
+  try {
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    window.speechSynthesis.speak(u)
+    window.speechSynthesis.resume()
+    speechUnlocked = true
+  } catch { /* noop */ }
+}
+
+// Preload voices (Chrome needs this) + attach the one-time gesture unlock.
 if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.speechSynthesis.getVoices()
   window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices()
+  const unlock = () => {
+    ensureUnlocked()
+    window.removeEventListener('pointerdown', unlock)
+    window.removeEventListener('touchend', unlock)
+    window.removeEventListener('keydown', unlock)
+  }
+  window.addEventListener('pointerdown', unlock)
+  window.addEventListener('touchend', unlock)
+  window.addEventListener('keydown', unlock)
 }

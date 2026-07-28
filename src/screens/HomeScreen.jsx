@@ -1,14 +1,24 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
-import { StarIcon, ShieldIcon, ArmchairIcon, BellIcon, PlayIcon, PlusIcon } from '../components/SVGIcons'
+import { StarIcon, ShieldIcon, ArmchairIcon, BellIcon, PlayIcon, PlusIcon, CloseIcon } from '../components/SVGIcons'
 import { DreamyBackground, FeatureIcon, BadgeArt } from '../components/AppArt'
+import { getBadgeMeta } from '../data/badges'
+
+const formatEarned = (ts) => {
+  if (!ts) return 'Earned recently'
+  try { return `Earned ${new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}` }
+  catch { return 'Earned recently' }
+}
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
 export default function HomeScreen({ navigate }) {
   const { childName, selectedCharacter, level, xp, stars, badges, gear } = useGameStore()
   const character = getCharacter(selectedCharacter)
+  const [selectedBadge, setSelectedBadge] = useState(null)
+  const recentBadges = [...badges].slice(-8).reverse()
   const currentLevelXP = XP_PER_LEVEL[level - 1] || 0
   const nextLevelXP = XP_PER_LEVEL[level] || XP_PER_LEVEL[XP_PER_LEVEL.length - 1]
   const intoLevel = Math.max(0, xp - currentLevelXP)
@@ -204,12 +214,27 @@ export default function HomeScreen({ navigate }) {
             <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#6B7280', margin: 0 }}>Recent Badges</p>
             <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', fontWeight: 700, color: '#8B5CF6' }}>View All</span>
           </div>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
-            {['heart', 'compass', 'tree', 'lantern'].map((type, i) => (
-              <motion.div key={type} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.35 + i * 0.05, type: 'spring' }} style={{ flexShrink: 0 }}>
-                <BadgeArt type={type} size={48} />
-              </motion.div>
-            ))}
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px', alignItems: 'center' }}>
+            {recentBadges.length === 0 && (
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.78rem', fontWeight: 600, color: '#9CA3AF', margin: 0, flex: 1 }}>
+                Complete stories & missions to earn badges!
+              </p>
+            )}
+            {recentBadges.map((badge, i) => {
+              const meta = getBadgeMeta(badge)
+              return (
+                <motion.button
+                  key={badge.id}
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.35 + i * 0.05, type: 'spring' }}
+                  onClick={() => setSelectedBadge(badge)}
+                  whileTap={{ scale: 0.88 }}
+                  aria-label={meta.name}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, lineHeight: 0 }}
+                >
+                  <BadgeArt type={meta.art} size={48} />
+                </motion.button>
+              )
+            })}
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -229,6 +254,50 @@ export default function HomeScreen({ navigate }) {
         <div style={{ height: '1rem' }} />
       </div>
       </div>
+
+      {/* Badge detail popup */}
+      <AnimatePresence>
+        {selectedBadge && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelectedBadge(null)}
+              style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(45,27,105,0.35)', backdropFilter: 'blur(6px)' }}
+            />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', damping: 16 }}
+              style={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 61,
+                width: '84%', maxWidth: '340px', textAlign: 'center',
+                background: 'rgba(255,255,255,0.98)', borderRadius: '26px', padding: '1.75rem 1.5rem 1.5rem',
+                boxShadow: '0 24px 60px rgba(76,29,149,0.28)', border: '1px solid rgba(255,255,255,0.8)',
+              }}
+            >
+              <motion.button onClick={() => setSelectedBadge(null)} whileTap={{ scale: 0.9 }}
+                style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <CloseIcon size={13} color="#6B7280" />
+              </motion.button>
+              {(() => {
+                const meta = getBadgeMeta(selectedBadge)
+                return (
+                  <>
+                    <motion.div animate={{ rotate: [0, -8, 8, 0], scale: [1, 1.08, 1] }} transition={{ duration: 0.7, repeat: 1 }} style={{ display: 'inline-block', marginBottom: '0.6rem' }}>
+                      <BadgeArt type={meta.art} size={92} />
+                    </motion.div>
+                    <h3 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '1.3rem', color: '#4C1D95', margin: '0 0 0.4rem' }}>{meta.name}</h3>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.9rem', fontWeight: 600, color: '#4A5568', lineHeight: 1.5, margin: '0 0 0.9rem' }}>{meta.desc}</p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '9999px', background: 'rgba(139,92,246,0.1)' }}>
+                      <StarIcon size={12} color="#8B5CF6" />
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', fontWeight: 700, color: '#7C3AED' }}>{formatEarned(selectedBadge.earnedAt)}</span>
+                    </div>
+                  </>
+                )
+              })()}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
