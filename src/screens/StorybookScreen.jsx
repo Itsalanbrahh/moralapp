@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
@@ -26,6 +26,15 @@ function tokenize(text) {
   })
 }
 
+// little up-pointing guide that bounces under the word the child should read next
+function PointerCaret() {
+  return (
+    <svg width="16" height="10" viewBox="0 0 16 10" style={{ display: 'block' }}>
+      <path d="M8 0 L15 10 L1 10 Z" fill="#FBBF24" />
+    </svg>
+  )
+}
+
 export default function StorybookScreen({ navigate, params }) {
   const { selectedCharacter, childName, completeStory, addXP, readingLevel, voiceEnabled, speechRate } = useGameStore()
   const character = getCharacter(selectedCharacter)
@@ -34,7 +43,9 @@ export default function StorybookScreen({ navigate, params }) {
 
   const [sceneIndex, setSceneIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [spokenWord, setSpokenWord] = useState(-1)
+  const [modelIdx, setModelIdx] = useState(-1)   // word being modeled while "Hear it" plays
+  const [readIdx, setReadIdx] = useState(0)       // words the child has read (beginner tap-to-read)
+  const [celebrate, setCelebrate] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [phase, setPhase] = useState('story') // 'story' | 'quiz'
 
@@ -44,78 +55,63 @@ export default function StorybookScreen({ navigate, params }) {
   const [correctCount, setCorrectCount] = useState(0)
   const [showHint, setShowHint] = useState(false)
 
-  const timerRef = useRef(null)
-  const useBoundaryRef = useRef(false)
-
   const scene = story?.scenes[sceneIndex]
   const tokens = useMemo(() => tokenize(scene?.text), [scene])
   const wordCount = useMemo(() => tokens.filter((t) => t.isWord).length, [tokens])
   const quiz = story?.comprehension || []
+  const targetWord = useMemo(() => tokens.find((t) => t.isWord && t.order === readIdx)?.text || '', [tokens, readIdx])
 
-  const effRate = mode === 'beginner' ? Math.min(speechRate, 0.85) : speechRate
+  const effRate = mode === 'advanced' ? speechRate : Math.min(speechRate, 0.9)
 
-  // Narrate the current scene (and drive read-along highlight for beginners)
-  const narrate = useCallback(() => {
-    if (!scene) return
-    clearTimeout(timerRef.current)
+  // Read the whole sentence aloud — models word-by-word tracking for beginners.
+  const playFull = useCallback(() => {
+    if (!scene || !voiceEnabled) return
     stopSpeaking()
-    setSpokenWord(-1)
-    useBoundaryRef.current = false
-
-    const words = tokens.filter((t) => t.isWord)
-
-    // timer fallback so the highlight works even without speech-boundary events
-    const startTimer = () => {
-      let i = 0
-      const step = () => {
-        if (useBoundaryRef.current) return
-        setSpokenWord(i)
-        const w = words[i]
-        i++
-        if (i <= words.length) {
-          const ms = Math.min(520, Math.max(200, 210 + (w?.text.length || 3) * 28)) / effRate
-          timerRef.current = setTimeout(step, ms)
-        }
-      }
-      timerRef.current = setTimeout(step, 350)
-    }
-
-    if (mode === 'beginner') startTimer()
-
-    if (!voiceEnabled) { setIsPlaying(false); return }
-
+    setModelIdx(-1)
     setIsPlaying(true)
     speak(scene.text, {
       rate: effRate,
       pitch: character.voicePitch,
       onBoundary: mode === 'beginner' ? (e) => {
-        useBoundaryRef.current = true
-        clearTimeout(timerRef.current)
         const tk = tokens.find((t) => e.charIndex >= t.startChar && e.charIndex < t.endChar)
-        if (tk) setSpokenWord(tk.isWord ? tk.order : Math.min(wordCount - 1, (tk.order < 0 ? 0 : tk.order) + 1))
+        if (tk) setModelIdx(tk.isWord ? tk.order : Math.max(0, tk.order))
       } : undefined,
-    }).then(() => {
-      setIsPlaying(false)
-      setSpokenWord(wordCount)
-    })
-  }, [scene, tokens, wordCount, mode, voiceEnabled, effRate, character.voicePitch])
+    }).then(() => { setIsPlaying(false); setModelIdx(-1) })
+  }, [scene, tokens, mode, effRate, character.voicePitch, voiceEnabled])
 
-  // Auto-narrate on scene change for listen & beginner (advanced reads silently)
-  useEffect(() => {
-    if (isDone || phase !== 'story' || !scene) return
-    if (mode === 'advanced') { setSpokenWord(-1); return }
-    const t = setTimeout(narrate, 350)
-    return () => { clearTimeout(t); clearTimeout(timerRef.current); stopSpeaking() }
-  }, [sceneIndex, phase, isDone]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const speakWord = (raw) => {
+  // Speak a single word (tap-to-hear). `slow` stretches it for sounding-out.
+  const speakWord = (raw, slow = false) => {
+    if (!voiceEnabled) return
     const w = raw.replace(/[^A-Za-z'’-]/g, '')
-    if (w) speak(w, { rate: 0.7, pitch: character.voicePitch })
+    if (w) speak(w, { rate: slow ? 0.4 : 0.72, pitch: character.voicePitch })
   }
 
+  // Beginner tap-to-read: tapping the glowing word reads it & advances; other taps just help.
+  const tapWord = (t) => {
+    if (modelIdx >= 0 || !t.isWord || celebrate) return
+    speakWord(t.text)
+    if (t.order === readIdx) {
+      const next = readIdx + 1
+      setReadIdx(next)
+      if (next >= wordCount) {
+        setCelebrate(true)
+        setTimeout(() => speak('You read it! Great job!', { rate: 0.95, pitch: character.voicePitch }), 300)
+      }
+    }
+  }
+
+  // Per-scene reset (+ auto-narrate for listen mode)
+  useEffect(() => {
+    if (isDone || phase !== 'story' || !scene) return
+    stopSpeaking()
+    setModelIdx(-1); setReadIdx(0); setCelebrate(false)
+    if (mode === 'listen') { const t = setTimeout(playFull, 350); return () => { clearTimeout(t); stopSpeaking() } }
+    return () => stopSpeaking()
+  }, [sceneIndex, phase, isDone]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const togglePlay = () => {
-    if (isPlaying) { stopSpeaking(); clearTimeout(timerRef.current); setIsPlaying(false) }
-    else narrate()
+    if (isPlaying) { stopSpeaking(); setIsPlaying(false); setModelIdx(-1) }
+    else playFull()
   }
 
   const finish = () => {
@@ -126,7 +122,6 @@ export default function StorybookScreen({ navigate, params }) {
 
   const advanceOrFinish = () => {
     stopSpeaking()
-    clearTimeout(timerRef.current)
     if (sceneIndex < story.scenes.length - 1) setSceneIndex((s) => s + 1)
     else if (mode === 'advanced' && quiz.length) setPhase('quiz')
     else finish()
@@ -315,28 +310,57 @@ export default function StorybookScreen({ navigate, params }) {
         )}
 
         {mode === 'beginner' && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '0.25rem 0 1rem' }}>
-            <motion.div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}55` }} animate={isPlaying ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.4, repeat: Infinity }}>
-              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </motion.div>
-            <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem', padding: '0.9rem 1rem' }}>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '1.45rem', lineHeight: 1.85, fontWeight: 700, margin: 0 }}>
+          <div style={{ padding: '0.25rem 0 1rem' }}>
+            {/* words-read progress */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 2px 12px' }}>
+              <div style={{ flex: 1, height: '7px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                <motion.div animate={{ width: `${(Math.min(readIdx, wordCount) / Math.max(1, wordCount)) * 100}%` }} style={{ height: '100%', background: 'linear-gradient(90deg,#10B981,#34D399)' }} />
+              </div>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{Math.min(readIdx, wordCount)} / {wordCount} words</span>
+            </div>
+
+            {/* tap-to-read card */}
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1.25rem', padding: '1.15rem 1rem 1.35rem' }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '1.55rem', lineHeight: 2.05, fontWeight: 700, margin: 0 }}>
                 {tokens.map((t, i) => {
                   if (!t.isWord) return <span key={i}>{t.text}</span>
-                  const read = t.order < spokenWord
-                  const current = t.order === spokenWord
+                  const modeling = modelIdx >= 0
+                  const modeled = modeling && t.order <= modelIdx
+                  const read = !modeling && t.order < readIdx
+                  const target = !modeling && !celebrate && t.order === readIdx
+                  let color = 'rgba(255,255,255,0.5)', background = 'transparent', boxShadow = 'none'
+                  if (modeled) color = '#93C5FD'
+                  else if (read) color = '#34D399'
+                  else if (target) { color = '#0F172A'; background = '#FBBF24'; boxShadow = '0 0 0 3px rgba(251,191,36,0.35)' }
                   return (
-                    <span key={i} onClick={() => speakWord(t.text)}
-                      style={{ cursor: 'pointer', borderRadius: '6px', padding: '0 1px',
-                        color: current ? '#0F172A' : read ? rc.color : 'rgba(255,255,255,0.6)',
-                        background: current ? '#FBBF24' : 'transparent', transition: 'color 0.15s, background 0.15s' }}>
+                    <span key={i} onClick={() => tapWord(t)}
+                      style={{ position: 'relative', cursor: 'pointer', display: 'inline-block', borderRadius: '9px', padding: '2px 5px', color, background, boxShadow, transition: 'color 0.15s, background 0.15s' }}>
                       {t.text}
+                      {target && (
+                        <motion.span animate={{ y: [0, 4, 0] }} transition={{ duration: 0.9, repeat: Infinity }}
+                          style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '3px' }}>
+                          <PointerCaret />
+                        </motion.span>
+                      )}
                     </span>
                   )
                 })}
               </p>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', margin: '0.6rem 0 0' }}>Tap any word to hear it</p>
             </div>
+
+            {/* helper / celebration */}
+            {celebrate ? (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                style={{ marginTop: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <StarIcon size={16} color="#FBBF24" />
+                <span style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1rem', color: '#34D399' }}>You read the whole page!</span>
+                <StarIcon size={16} color="#FBBF24" />
+              </motion.div>
+            ) : (
+              <p style={{ textAlign: 'center', fontFamily: "'Nunito', sans-serif", fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', margin: '0.85rem 0 0' }}>
+                {modelIdx >= 0 ? 'Follow along as I read…' : 'Tap the glowing word to read it out loud'}
+              </p>
+            )}
           </div>
         )}
 
@@ -352,25 +376,33 @@ export default function StorybookScreen({ navigate, params }) {
         )}
       </div>
 
-      {/* Audio control (listen + beginner + advanced-optional) */}
+      {/* Audio control row */}
       <div style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <motion.button onClick={togglePlay} whileTap={{ scale: 0.9 }}
           style={{ width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${rc.color},${rc.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none', boxShadow: `0 4px 16px ${rc.color}55` }}>
           {isPlaying ? <PauseIcon size={16} color="white" /> : <PlayIcon size={16} color="white" />}
         </motion.button>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', margin: 0 }}>
-            {mode === 'advanced' ? 'Read it aloud' : mode === 'beginner' ? 'Hear it & read along' : 'Hear the story'}
+            {mode === 'advanced' ? 'Read it aloud' : mode === 'beginner' ? 'Hear the sentence' : 'Hear the story'}
           </p>
           <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-            {isPlaying ? 'Playing…' : 'Tap to play'}
+            {isPlaying ? 'Playing…' : mode === 'beginner' ? 'I’ll model it for you' : 'Tap to play'}
           </p>
         </div>
-        <motion.button onClick={narrate} whileTap={{ scale: 0.92 }}
-          style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
-          <RefreshIcon size={13} color="rgba(255,255,255,0.6)" />
-          <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Again</span>
-        </motion.button>
+        {mode === 'beginner' ? (
+          <motion.button onClick={() => speakWord(targetWord, true)} disabled={celebrate || !targetWord} whileTap={{ scale: 0.92 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', borderRadius: '9999px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.4)', cursor: celebrate || !targetWord ? 'default' : 'pointer', opacity: celebrate || !targetWord ? 0.4 : 1 }}>
+            <VoiceOnIcon size={13} color="#FBBF24" />
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: '#FBBF24' }}>Sound out</span>
+          </motion.button>
+        ) : (
+          <motion.button onClick={playFull} whileTap={{ scale: 0.92 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+            <RefreshIcon size={13} color="rgba(255,255,255,0.6)" />
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Again</span>
+          </motion.button>
+        )}
       </div>
 
       {/* Advance */}
