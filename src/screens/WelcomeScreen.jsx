@@ -74,15 +74,14 @@ export default function WelcomeScreen({ navigate }) {
       >
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <h1 style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '3.5rem',
-            lineHeight: 0.92, margin: 0, letterSpacing: '-0.5px',
+            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '4.2rem',
+            lineHeight: 1, margin: 0, letterSpacing: '-1px', color: '#7C3AED',
             textShadow: '2.5px 0 #fff, -2.5px 0 #fff, 0 2.5px #fff, 0 -2.5px #fff, 2px 2px #fff, -2px -2px #fff, 2px -2px #fff, -2px 2px #fff, 0 7px 16px rgba(124,58,237,0.28)',
           }}>
-            <span style={{ display: 'block', color: '#7C3AED' }}>Build</span>
-            <span style={{ display: 'block', color: '#3B82F6' }}>Moral</span>
+            Moral
           </h1>
           <motion.div
-            style={{ position: 'absolute', top: '-10px', right: '-14px' }}
+            style={{ position: 'absolute', top: '-8px', right: '-20px' }}
             animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >

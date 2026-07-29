@@ -154,9 +154,8 @@ export default function CharacterSelect({ navigate }) {
           >
             {/* Logo */}
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4 mt-2">
-              <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '2rem', lineHeight: 1.1 }}>
-                <span style={{ color: '#8B5CF6' }}>Build</span>
-                <span style={{ color: '#3B82F6' }}>Moral</span>
+              <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '2rem', lineHeight: 1.1, color: '#7C3AED', margin: 0 }}>
+                Moral
               </h1>
             </motion.div>
 
