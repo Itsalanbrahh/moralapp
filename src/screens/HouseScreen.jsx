@@ -9,6 +9,7 @@ import {
 } from '../data/houseItems'
 import { BackArrowIcon, StarIcon, HeartIcon, BoltIcon, LeafIcon, CloseIcon, CheckIcon, LockIcon, ArmchairIcon, BoxIcon } from '../components/SVGIcons'
 import { ItemArt } from '../components/HouseArt'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 // Floor band (as % of the room box). Items live on the floor and scale with depth.
 const FLOOR_TOP = 58
@@ -337,9 +338,7 @@ export default function HouseScreen({ navigate }) {
         <motion.div
           animate={{ y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', left: '50%', top: '86%', transform: `translate(-50%,-100%) scale(${depthScale(86)})`, zIndex: Math.round(86 * 4), pointerEvents: 'none', textAlign: 'center' }}>
-          <div style={{ width: '58px', height: '58px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${character.color}`, boxShadow: `0 6px 18px ${character.color}40`, background: 'white' }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
+          <AnimatedCompanion character={character} size={58} animation="idle" fps={4} style={{ border: `3px solid ${character.color}`, boxShadow: `0 6px 18px ${character.color}40`, background: 'white' }} />
           <div style={{ width: '46px', height: '10px', borderRadius: '50%', background: 'rgba(0,0,0,0.18)', filter: 'blur(4px)', margin: '2px auto 0' }} />
         </motion.div>
 

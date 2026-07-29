@@ -10,6 +10,7 @@ import HomeScreen from './screens/HomeScreen'
 import StoryScreen from './screens/StoryScreen'
 import MissionScreen from './screens/MissionScreen'
 import HouseScreen from './screens/HouseScreen'
+import FarmScreen from './screens/FarmScreen'
 import StorybookScreen from './screens/StorybookScreen'
 import MissionPlayScreen from './screens/MissionPlayScreen'
 import AIStoryScreen from './screens/AIStoryScreen'
@@ -25,6 +26,7 @@ const tabToScreen = {
   story: 'story',
   mission: 'mission',
   house: 'house',
+  farm: 'farm',
   profile: 'profile',
 }
 
@@ -33,6 +35,7 @@ const screenToTab = {
   story: 'story',
   mission: 'mission',
   house: 'house',
+  farm: 'farm',
   profile: 'profile',
   aiStory: 'story',
   customize: 'profile',
@@ -48,6 +51,7 @@ const screens = {
   mission: MissionScreen,
   missionPlay: MissionPlayScreen,
   house: HouseScreen,
+  farm: FarmScreen,
   aiStory: AIStoryScreen,
   profile: ProfileScreen,
   customize: CustomizeScreen,

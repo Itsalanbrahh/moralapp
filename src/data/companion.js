@@ -4,27 +4,30 @@ import { getCharacter } from './characters'
 export const ACCENT_COLORS = [
   { id: 'default', color: null, label: 'Original' },
   { id: 'blue', color: '#5AA9E6', label: 'Sky' },
-  { id: 'violet', color: '#A78BFA', label: 'Violet' },
-  { id: 'mint', color: '#34D399', label: 'Mint' },
+  { id: 'teal', color: '#34D399', label: 'Teal' },
+  { id: 'lavender', color: '#A78BFA', label: 'Lavender' },
   { id: 'pink', color: '#F472B6', label: 'Rose' },
-  { id: 'peach', color: '#FB923C', label: 'Peach' },
+  { id: 'orange', color: '#FB923C', label: 'Orange' },
   { id: 'gold', color: '#FBBF24', label: 'Gold' },
 ]
 
-// Cosmetic hats (sit on top of the head so they don't clash with the painted art).
-export const HATS = [
-  { id: 'none', name: 'No Hat', minLevel: 1 },
-  { id: 'party', name: 'Party Hat', minLevel: 1 },
-  { id: 'flower', name: 'Flower Crown', minLevel: 2 },
-  { id: 'wizard', name: 'Wizard Hat', minLevel: 3 },
-  { id: 'crown', name: 'Royal Crown', minLevel: 5 },
+// Cosmetic outfits (simplified to 3 items)
+export const OUTFITS = [
+  { id: 'none', name: 'None', minLevel: 1 },
+  { id: 'scarf', name: 'Cozy Scarf', minLevel: 1 },
+  { id: 'hat', name: 'Farm Hat', minLevel: 1 },
+  { id: 'bow', name: 'Cute Bow', minLevel: 1 },
 ]
+
+// Keep HATS as alias for backward compatibility
+export const HATS = OUTFITS
 
 // Fun suggested names shown during onboarding, per guide.
 export const SUGGESTED_NAMES = {
   owl: ['Hoots', 'Professor', 'Luna', 'Ollie'],
   bear: ['Barnaby', 'Cuddles', 'Bruno', 'Honey'],
   bunny: ['Clover', 'Hops', 'Cottontail', 'Pip'],
+  cat: ['Whiskers', 'Mittens', 'Shadow', 'Cleo'],
 }
 
 // The name to show for the guide (falls back to the species name).

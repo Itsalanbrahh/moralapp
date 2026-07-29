@@ -373,3 +373,14 @@ export function FurnitureIcon({ size = 24, color = 'currentColor' }) {
     </svg>
   )
 }
+
+export function SproutIcon({ size = 24, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22V10" />
+      <path d="M6 12c0-4 3-7 6-8 3 1 6 4 6 8" fill={color} opacity="0.2" stroke={color} />
+      <path d="M9 18c-2 0-4-1-4-3 0-2 2-4 4-4" />
+      <path d="M15 18c2 0 4-1 4-3 0-2-2-4-4-4" />
+    </svg>
+  )
+}

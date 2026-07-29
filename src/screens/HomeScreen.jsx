@@ -5,7 +5,7 @@ import { getCharacter } from '../data/characters'
 import { StarIcon, ShieldIcon, ArmchairIcon, BellIcon, PlayIcon, PlusIcon, CloseIcon } from '../components/SVGIcons'
 import { DreamyBackground, FeatureIcon, BadgeArt } from '../components/AppArt'
 import { getBadgeMeta } from '../data/badges'
-import { CompanionAvatar } from '../components/CompanionArt'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 const formatEarned = (ts) => {
   if (!ts) return 'Earned recently'
@@ -38,7 +38,7 @@ export default function HomeScreen({ navigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <motion.button onClick={() => navigate('customize')} whileTap={{ scale: 0.92 }}
             style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 }} aria-label="Customize companion">
-            <CompanionAvatar character={character} size={44} color={guideColor} hat={companionHat} />
+            <AnimatedCompanion character={character} size={44} animation="idle" fps={4} />
           </motion.button>
           <div>
             <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1rem', color: '#1F2937', lineHeight: 1.2, margin: 0 }}>

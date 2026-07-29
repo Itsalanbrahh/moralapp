@@ -4,13 +4,14 @@ import { useGameStore } from '../stores/gameStore'
 import { characters } from '../data/characters'
 import { speak } from '../utils/voice'
 import { StarIcon, ChevronRightIcon, SparkleIcon, CheckIcon, VoiceOnIcon, BookIcon, TrophyIcon } from '../components/SVGIcons'
-import { CompanionAvatar } from '../components/CompanionArt'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 import { SUGGESTED_NAMES } from '../data/companion'
 
 const guideGradients = {
   owl: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
   bear: 'linear-gradient(135deg, #F59E0B, #F97316)',
   bunny: 'linear-gradient(135deg, #EC4899, #FBCFE8)',
+  cat: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
 }
 
 const READING_LEVELS = [
@@ -103,7 +104,7 @@ export default function CharacterSelect({ navigate }) {
                 border: '3px solid rgba(139,92,246,0.3)',
                 boxShadow: '0 8px 24px rgba(139,92,246,0.2)',
               }}>
-                <img src="/assets/characters/owl.png" alt="Owl" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <AnimatedCompanion character="owl" size={80} animation="idle" fps={4} style={{ borderRadius: 0 }} />
               </div>
             </motion.div>
 
@@ -196,12 +197,7 @@ export default function CharacterSelect({ navigate }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, borderRadius: '30px 0 0 30px',
                   }}>
-                    <motion.img
-                      src={char.image} alt={char.name}
-                      style={{ width: '65px', height: '65px', objectFit: 'contain' }}
-                      animate={{ y: [0, -3, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
-                    />
+                    <AnimatedCompanion character={char.id} size={65} animation="idle" fps={5} />
                   </div>
                   <div style={{ flex: 1, padding: '0.75rem 0.75rem 0.75rem 1rem' }}>
                     <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0, lineHeight: 1.2 }}>
@@ -256,7 +252,7 @@ export default function CharacterSelect({ navigate }) {
             className="w-full max-w-sm flex flex-col items-center flex-1"
           >
             <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.4, repeat: Infinity }} className="mb-3 mt-2">
-              <CompanionAvatar character={selected} size={110} />
+              <AnimatedCompanion character={selected} size={120} animation="idle" fps={5} />
             </motion.div>
 
             <div className="text-center mb-4">
@@ -310,7 +306,7 @@ export default function CharacterSelect({ navigate }) {
             {/* Guide mascot */}
             <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2, repeat: Infinity }} className="mb-3 mt-2">
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${characters[selected]?.color || '#8B5CF6'}40`, boxShadow: '0 8px 24px rgba(139,92,246,0.15)' }}>
-                <img src={characters[selected]?.image || '/assets/characters/owl.png'} alt="Guide" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <AnimatedCompanion character={selected || 'owl'} size={64} animation="idle" fps={4} />
               </div>
             </motion.div>
 

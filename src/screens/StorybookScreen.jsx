@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getStory } from '../data/stories'
-import { speak, stopSpeaking } from '../utils/voice'
+import { speak, stopSpeaking, playAudioFile, getAudioTime } from '../utils/voice'
 import { CloseIcon, BackArrowIcon, BoltIcon, CheckIcon, StarIcon, PlayIcon, PauseIcon, RefreshIcon, VoiceOnIcon, BookIcon, TrophyIcon } from '../components/SVGIcons'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 const READING = {
   listen: { label: 'Listening', color: '#3B82F6', Icon: VoiceOnIcon },
@@ -39,8 +40,18 @@ export default function StorybookScreen({ navigate, params }) {
   const { selectedCharacter, childName, completeStory, addXP, readingLevel, voiceEnabled, speechRate, companionName } = useGameStore()
   const character = getCharacter(selectedCharacter)
   const guideName = (companionName || '').trim() || character.name
-  const story = getStory(params.storyId)
+  const story = params.story || getStory(params.storyId)
   const mode = READING[readingLevel] ? readingLevel : 'listen'
+
+  // Guard: if story not found, go back
+  if (!story) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: '#0F172A' }}>
+        <p style={{ color: 'white', fontFamily: "'Nunito', sans-serif", marginBottom: '1rem' }}>Story not found</p>
+        <button onClick={() => navigate('story')} style={{ padding: '10px 24px', borderRadius: 12, background: '#8B5CF6', color: 'white', border: 'none', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>Back to Stories</button>
+      </div>
+    )
+  }
 
   const [sceneIndex, setSceneIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -48,6 +59,10 @@ export default function StorybookScreen({ navigate, params }) {
   const [readIdx, setReadIdx] = useState(0)       // words the child has read (beginner tap-to-read)
   const [celebrate, setCelebrate] = useState(false)
   const [isDone, setIsDone] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1.0)
+  const [wordTimestamps, setWordTimestamps] = useState(null)
+  const [highlightedWordIdx, setHighlightedWordIdx] = useState(-1)
+  const syncRafRef = useRef(null)
   const [phase, setPhase] = useState('story') // 'story' | 'quiz'
 
   // quiz state (advanced)
@@ -70,14 +85,26 @@ export default function StorybookScreen({ navigate, params }) {
     stopSpeaking()
     setModelIdx(-1)
     setIsPlaying(true)
-    speak(scene.text, {
-      rate: effRate,
-      pitch: character.voicePitch,
-      onBoundary: mode === 'beginner' ? (e) => {
-        const tk = tokens.find((t) => e.charIndex >= t.startChar && e.charIndex < t.endChar)
-        if (tk) setModelIdx(tk.isWord ? tk.order : Math.max(0, tk.order))
-      } : undefined,
-    }).then(() => { setIsPlaying(false); setModelIdx(-1) })
+
+    // Use scene audio file if available, otherwise browser TTS
+    if (scene.audio) {
+      playAudioFile(scene.audio, playbackRate)
+        .then(() => { setIsPlaying(false); setModelIdx(-1) })
+        .catch(() => {
+          // Fallback to browser TTS if audio fails
+          speak(scene.text, { rate: effRate * playbackRate, pitch: character.voicePitch })
+            .then(() => { setIsPlaying(false); setModelIdx(-1) })
+        })
+    } else {
+      speak(scene.text, {
+        rate: effRate,
+        pitch: character.voicePitch,
+        onBoundary: mode === 'beginner' ? (e) => {
+          const tk = tokens.find((t) => e.charIndex >= t.startChar && e.charIndex < t.endChar)
+          if (tk) setModelIdx(tk.isWord ? tk.order : Math.max(0, tk.order))
+        } : undefined,
+      }).then(() => { setIsPlaying(false); setModelIdx(-1) })
+    }
   }, [scene, tokens, mode, effRate, character.voicePitch, voiceEnabled])
 
   // Speak a single word (tap-to-hear). `slow` stretches it for sounding-out.
@@ -105,10 +132,40 @@ export default function StorybookScreen({ navigate, params }) {
   useEffect(() => {
     if (isDone || phase !== 'story' || !scene) return
     stopSpeaking()
-    setModelIdx(-1); setReadIdx(0); setCelebrate(false)
+    setModelIdx(-1); setReadIdx(0); setCelebrate(false); setHighlightedWordIdx(-1); setWordTimestamps(null)
+
+    // Load word timestamps if scene has audio
+    if (scene.audio) {
+      const storyId = story?.id
+      const sceneNum = String(sceneIndex + 1)
+      fetch(`/assets/audio/stories/${storyId}/timestamps.json`)
+        .then(r => r.json())
+        .then(data => { if (data[sceneNum]) setWordTimestamps(data[sceneNum]) })
+        .catch(() => {})
+    }
+
     if (mode === 'listen') { const t = setTimeout(playFull, 350); return () => { clearTimeout(t); stopSpeaking() } }
     return () => stopSpeaking()
   }, [sceneIndex, phase, isDone]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync word highlight with audio playback
+  useEffect(() => {
+    if (!wordTimestamps || !isPlaying) { setHighlightedWordIdx(-1); return }
+
+    const sync = () => {
+      const t = getAudioTime()
+      if (t >= 0) {
+        const idx = wordTimestamps.findIndex((w, i) => {
+          const next = wordTimestamps[i + 1]
+          return t >= w.start && (!next || t < next.start)
+        })
+        if (idx !== highlightedWordIdx) setHighlightedWordIdx(idx)
+      }
+      syncRafRef.current = requestAnimationFrame(sync)
+    }
+    syncRafRef.current = requestAnimationFrame(sync)
+    return () => { if (syncRafRef.current) cancelAnimationFrame(syncRafRef.current) }
+  }, [wordTimestamps, isPlaying])
 
   const togglePlay = () => {
     if (isPlaying) { stopSpeaking(); setIsPlaying(false); setModelIdx(-1) }
@@ -286,7 +343,7 @@ export default function StorybookScreen({ navigate, params }) {
             {mode === 'listen' && (
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.5, repeat: Infinity }}
                 style={{ position: 'absolute', bottom: 10, left: 10, width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${character.color}`, boxShadow: `0 6px 18px ${character.color}55` }}>
-                <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <AnimatedCompanion character={character} size={56} animation="idle" fps={5} />
               </motion.div>
             )}
           </div>
@@ -307,6 +364,27 @@ export default function StorybookScreen({ navigate, params }) {
               {isPlaying ? `${guideName} is telling the story…` : 'Tap play to hear this part'}
             </p>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: '6px 0 0' }}>Listen along, then tap Next</p>
+
+            {/* Speed controls */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12 }}>
+              <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Speed</span>
+              {[
+                { label: '0.75x', value: 0.75 },
+                { label: '1x', value: 1.0 },
+                { label: '1.25x', value: 1.25 },
+              ].map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => setPlaybackRate(s.value)}
+                  style={{
+                    padding: '4px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: playbackRate === s.value ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                    color: playbackRate === s.value ? 'white' : 'rgba(255,255,255,0.4)',
+                    fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 700,
+                  }}
+                >{s.label}</button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -325,12 +403,17 @@ export default function StorybookScreen({ navigate, params }) {
               <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '1.55rem', lineHeight: 2.05, fontWeight: 700, margin: 0 }}>
                 {tokens.map((t, i) => {
                   if (!t.isWord) return <span key={i}>{t.text}</span>
+                  // Audio timestamp sync highlighting
+                  const audioHighlighted = wordTimestamps && isPlaying && highlightedWordIdx >= 0 && t.order === highlightedWordIdx
+                  const audioPast = wordTimestamps && isPlaying && highlightedWordIdx >= 0 && t.order < highlightedWordIdx
                   const modeling = modelIdx >= 0
                   const modeled = modeling && t.order <= modelIdx
                   const read = !modeling && t.order < readIdx
                   const target = !modeling && !celebrate && t.order === readIdx
                   let color = 'rgba(255,255,255,0.5)', background = 'transparent', boxShadow = 'none'
-                  if (modeled) color = '#93C5FD'
+                  if (audioHighlighted) { color = '#FBBF24'; background = 'rgba(251,191,36,0.15)'; boxShadow = '0 0 0 2px rgba(251,191,36,0.3)' }
+                  else if (audioPast) { color = '#93C5FD' }
+                  else if (modeled) color = '#93C5FD'
                   else if (read) color = '#34D399'
                   else if (target) { color = '#0F172A'; background = '#FBBF24'; boxShadow = '0 0 0 3px rgba(251,191,36,0.35)' }
                   return (

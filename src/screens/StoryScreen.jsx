@@ -3,12 +3,15 @@ import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getAllStories } from '../data/stories'
 import { BackArrowIcon, CheckIcon, SparkleIcon, ChevronRightIcon } from '../components/SVGIcons'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 import { DreamyBackground } from '../components/AppArt'
 
 export default function StoryScreen({ navigate }) {
-  const { completedStories, selectedCharacter } = useGameStore()
+  const { completedStories, selectedCharacter, generatedStories } = useGameStore()
   const character = getCharacter(selectedCharacter)
-  const stories = getAllStories()
+  const allStories = [...getAllStories(), ...generatedStories]
+  // Only show stories that have audio (at least one scene with audio field)
+  const stories = allStories.filter(s => s.scenes?.some(sc => sc.audio))
 
   return (
     <div className="w-full h-full" style={{ position: 'relative', background: '#F3EEFB' }}>
@@ -49,7 +52,7 @@ export default function StoryScreen({ navigate }) {
               width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
               border: `2px solid ${character.color}40`,
             }}>
-              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <AnimatedCompanion character={character} size={36} animation="idle" fps={4} />
             </div>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#4A5568' }}>
               Pick a story to read with your buddy!
@@ -110,7 +113,7 @@ export default function StoryScreen({ navigate }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 + i * 0.08 }}
-                onClick={() => navigate('storyPlay', { storyId: story.id })}
+                onClick={() => navigate('storyPlay', story.id.startsWith('ai-') ? { story } : { storyId: story.id })}
                 whileTap={{ scale: 0.98 }}
                 style={{
                   width: '100%', borderRadius: '20px', overflow: 'hidden',

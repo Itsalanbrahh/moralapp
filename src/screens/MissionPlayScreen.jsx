@@ -5,6 +5,7 @@ import { getCharacter } from '../data/characters'
 import { getMission } from '../data/missions'
 import { speak } from '../utils/voice'
 import { CloseIcon, BoltIcon, StarIcon, TrophyIcon, CheckIcon } from '../components/SVGIcons'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 export default function MissionPlayScreen({ navigate, params }) {
   const { selectedCharacter, childName, completeMission, addXP, addStars, addGear, addFurniture, addBadge, addPet } = useGameStore()
@@ -133,7 +134,7 @@ export default function MissionPlayScreen({ navigate, params }) {
           {mission.title}
         </p>
         <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${character.color}40` }}>
-          <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <AnimatedCompanion character={character} size={32} animation="idle" fps={4} />
         </div>
       </div>
 
@@ -158,7 +159,7 @@ export default function MissionPlayScreen({ navigate, params }) {
             width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
             border: `2px solid ${character.color}40`,
           }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <AnimatedCompanion character={character} size={36} animation="idle" fps={4} />
           </div>
           <div style={{
             flex: 1, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',

@@ -35,6 +35,18 @@ export const characters = {
     voicePitch: 1.2,
     voiceRate: 1.05,
   },
+  cat: {
+    id: 'cat',
+    name: 'Cat',
+    image: '/assets/characters/cat.png',
+    title: 'Curious Explorer',
+    color: '#f59e0b',
+    colorLight: '#fbbf24',
+    greeting: "Meow! Hey there! Want to explore something cool together? I found the neatest thing!",
+    personality: 'curious, playful, clever',
+    voicePitch: 1.1,
+    voiceRate: 1.0,
+  },
 }
 
 export const getCharacter = (id) => characters[id] || characters.owl

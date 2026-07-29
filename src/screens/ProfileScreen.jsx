@@ -8,9 +8,11 @@ import {
   VoiceOnIcon, VoiceOffIcon, RefreshIcon, ShieldIcon,
   BoltIcon, BookIcon, CompassIcon, TrophyIcon, ChevronRightIcon, SparkleIcon
 } from '../components/SVGIcons'
-import { CompanionAvatar } from '../components/CompanionArt'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 import { companionDisplayName, companionColor } from '../data/companion'
 import { DreamyBackground } from '../components/AppArt'
+import { speak, stopSpeaking } from '../utils/voice'
+import { characters } from '../data/characters'
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
@@ -27,12 +29,14 @@ export default function ProfileScreen({ navigate }) {
     readingLevel, setReadingLevel, companionHat,
   } = useGameStore()
   const store = useGameStore()
+  const { companions, switchCompanion, updateCompanionName, updateCompanionVoice, syncCompanionStats } = store
   const character = getCharacter(selectedCharacter)
   const guideName = companionDisplayName(store)
   const guideColor = companionColor(store)
   const { logout, isGuest, parentEmail } = useAuthStore()
-
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [editingCompanion, setEditingCompanion] = useState(null)
+  const [editName, setEditName] = useState('')
 
   const currentLevelXP = XP_PER_LEVEL[level - 1] || 0
   const nextLevelXP = XP_PER_LEVEL[level] || XP_PER_LEVEL[XP_PER_LEVEL.length - 1]
@@ -83,7 +87,7 @@ export default function ProfileScreen({ navigate }) {
         }}>
           <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
-            <CompanionAvatar character={character} size={78} color={guideColor} hat={companionHat} />
+            <AnimatedCompanion character={character} size={78} animation="idle" fps={5} />
           </motion.div>
 
           <h2 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.3rem', color: '#1F2937', margin: 0 }}>
@@ -218,6 +222,139 @@ export default function ProfileScreen({ navigate }) {
               style={{ width: '100%', accentColor: '#8B5CF6', height: '4px' }}
             />
           </div>
+        </div>
+
+        {/* Companion Management */}
+        <div style={{
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.5)',
+          borderRadius: '1.5rem', padding: '1rem',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: '0.75rem',
+        }}>
+          <h3 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.9rem', fontWeight: 700, color: '#4A5568', margin: '0 0 0.75rem' }}>
+            Companions
+          </h3>
+          {Object.entries(companions).map(([id, comp]) => {
+            const charData = characters[id] || { name: id, color: '#8B5CF6', greeting: 'Hello!' }
+            const isActive = selectedCharacter === id
+            const isEditing = editingCompanion === id
+            return (
+              <div key={id} style={{
+                padding: '0.6rem', borderRadius: '14px', marginBottom: '8px',
+                background: isActive ? `${charData.color}12` : 'rgba(0,0,0,0.02)',
+                border: isActive ? `1.5px solid ${charData.color}40` : '1px solid rgba(0,0,0,0.04)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                    border: `2px solid ${charData.color}50`,
+                  }}>
+                    <AnimatedCompanion character={id} size={36} animation="idle" fps={4} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '0.85rem', color: '#1F2937', margin: 0 }}>
+                      {comp.customName || charData.name}
+                    </p>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.65rem', color: '#9CA3AF', margin: 0 }}>
+                      Level {comp.level} {isActive ? '(Active)' : ''}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                    {!isActive && (
+                      <motion.button
+                        onClick={() => { switchCompanion(id); syncCompanionStats() }}
+                        whileTap={{ scale: 0.92 }}
+                        style={{
+                          padding: '5px 10px', borderRadius: '9999px', border: 'none', cursor: 'pointer',
+                          background: `${charData.color}20`, fontFamily: "'Nunito', sans-serif",
+                          fontSize: '0.7rem', fontWeight: 700, color: charData.color,
+                        }}
+                      >Switch</motion.button>
+                    )}
+                    <motion.button
+                      onClick={() => {
+                        if (isEditing) { setEditingCompanion(null) }
+                        else { setEditingCompanion(id); setEditName(comp.customName || charData.name) }
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                      style={{
+                        width: '30px', height: '30px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+                        background: isEditing ? `${charData.color}25` : 'rgba(0,0,0,0.04)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <SettingsIcon size={14} color={isEditing ? charData.color : '#9CA3AF'} />
+                    </motion.button>
+                  </div>
+                </div>
+                {/* Edit panel */}
+                {isEditing && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+                  >
+                    {/* Name input */}
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        maxLength={20}
+                        className="glass-input"
+                        style={{ flex: 1, fontSize: '0.8rem', padding: '6px 10px' }}
+                        placeholder="Companion name"
+                      />
+                      <motion.button
+                        onClick={() => { if (editName.trim()) updateCompanionName(id, editName.trim()) }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{
+                          padding: '6px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                          background: `${charData.color}20`, fontFamily: "'Nunito', sans-serif",
+                          fontSize: '0.75rem', fontWeight: 700, color: charData.color,
+                        }}
+                      >Save</motion.button>
+                    </div>
+                    {/* Voice gender toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>Voice:</span>
+                      {['male', 'female'].map((g) => (
+                        <motion.button
+                          key={g}
+                          onClick={() => updateCompanionVoice(id, g)}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            padding: '5px 14px', borderRadius: '9999px', cursor: 'pointer',
+                            background: comp.voiceGender === g ? `${charData.color}25` : 'rgba(0,0,0,0.04)',
+                            fontFamily: "'Nunito', sans-serif", fontSize: '0.72rem', fontWeight: 700,
+                            color: comp.voiceGender === g ? charData.color : '#9CA3AF',
+                            border: comp.voiceGender === g ? `1.5px solid ${charData.color}50` : '1px solid rgba(0,0,0,0.06)',
+                          }}
+                        >{g === 'male' ? 'Male' : 'Female'}</motion.button>
+                      ))}
+                    </div>
+                    {/* Preview Voice */}
+                    <motion.button
+                      onClick={() => {
+                        stopSpeaking()
+                        speak(charData.greeting, { characterId: id, gender: comp.voiceGender, clip: 'greeting' })
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        width: '100%', padding: '8px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                        background: `${charData.color}15`, fontFamily: "'Nunito', sans-serif",
+                        fontSize: '0.8rem', fontWeight: 700, color: charData.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      }}
+                    >
+                      <VoiceOnIcon size={15} color={charData.color} />
+                      Preview Voice
+                    </motion.button>
+                  </motion.div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Reset progress */}

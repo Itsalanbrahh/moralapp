@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../stores/authStore'
 import { useGameStore } from '../stores/gameStore'
 import { MailIcon, LockIcon, UserIcon, GuestIcon, StarIcon, SparkleIcon } from '../components/SVGIcons'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 function FloatingStar({ x, y, size, delay }) {
   return (
@@ -24,7 +25,7 @@ export default function LoginScreen({ navigate }) {
   const [error, setError] = useState('')
 
   const { login, signup, continueAsGuest } = useAuthStore()
-  const { isOnboarded, selectedCharacter } = useGameStore()
+  const { isOnboarded, selectedCharacter, resetProgress } = useGameStore()
 
   const handleSubmit = () => {
     setError('')
@@ -34,25 +35,23 @@ export default function LoginScreen({ navigate }) {
 
     if (mode === 'signup') {
       if (!childName.trim()) { setError("Please enter child's name"); return }
+      resetProgress()
       signup(email.trim(), pin, childName.trim())
+      navigate('characterSelect')
     } else {
       login(email.trim(), pin)
-    }
-
-    if (isOnboarded && selectedCharacter) {
-      navigate('home')
-    } else {
-      navigate('characterSelect')
+      if (isOnboarded && selectedCharacter) {
+        navigate('home')
+      } else {
+        navigate('characterSelect')
+      }
     }
   }
 
   const handleGuest = () => {
+    resetProgress()
     continueAsGuest()
-    if (isOnboarded && selectedCharacter) {
-      navigate('home')
-    } else {
-      navigate('characterSelect')
-    }
+    navigate('characterSelect')
   }
 
   return (
@@ -90,7 +89,7 @@ export default function LoginScreen({ navigate }) {
               boxShadow: '0 8px 24px rgba(139,92,246,0.2)',
             }}
           >
-            <img src="/assets/characters/owl.png" alt="Moral" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <AnimatedCompanion character="owl" size={72} animation="idle" fps={4} />
           </motion.div>
           <h1 style={{
             fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '2rem',

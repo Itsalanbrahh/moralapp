@@ -57,6 +57,18 @@ const initialState = {
   voiceEnabled: true,
   ttsVoice: null,
   speechRate: 0.9,
+  voiceGender: 'male',
+
+  // Generated stories (AI-created)
+  generatedStories: [],
+
+  // Per-companion state
+  companions: {
+    owl: { level: 1, xp: 0, voiceGender: 'male', customName: 'Owl', selectedOutfits: ['scarf'], selectedColor: 'blue' },
+    bear: { level: 1, xp: 0, voiceGender: 'male', customName: 'Bear', selectedOutfits: [], selectedColor: 'blue' },
+    bunny: { level: 1, xp: 0, voiceGender: 'female', customName: 'Bunny', selectedOutfits: [], selectedColor: 'blue' },
+    cat: { level: 1, xp: 0, voiceGender: 'female', customName: 'Cat', selectedOutfits: [], selectedColor: 'blue' },
+  },
 
   // Session
   lastActive: null,
@@ -192,6 +204,64 @@ export const useGameStore = create(
       setReadingLevel: (level) => set({ readingLevel: level }),
       setVoiceEnabled: (enabled) => set({ voiceEnabled: enabled }),
       setSpeechRate: (rate) => set({ speechRate: rate }),
+      setVoiceGender: (gender) => set({ voiceGender: gender }),
+
+      // Generated stories
+      addGeneratedStory: (story) => set((s) => ({
+        generatedStories: [...s.generatedStories, story],
+      })),
+
+      // Companion management
+      switchCompanion: (characterId) => {
+        const companions = get().companions
+        const companion = companions[characterId]
+        if (companion) {
+          set({
+            selectedCharacter: characterId,
+            level: companion.level,
+            xp: companion.xp,
+            voiceGender: companion.voiceGender,
+          })
+        }
+      },
+
+      updateCompanionName: (characterId, name) => set((s) => ({
+        companions: {
+          ...s.companions,
+          [characterId]: { ...s.companions[characterId], customName: name },
+        },
+      })),
+
+      updateCompanionVoice: (characterId, gender) => {
+        set((s) => ({
+          companions: {
+            ...s.companions,
+            [characterId]: { ...s.companions[characterId], voiceGender: gender },
+          },
+        }))
+        if (get().selectedCharacter === characterId) {
+          set({ voiceGender: gender })
+        }
+      },
+
+      updateCompanionCustomization: (characterId, updates) => set((s) => ({
+        companions: {
+          ...s.companions,
+          [characterId]: { ...s.companions[characterId], ...updates },
+        },
+      })),
+
+      syncCompanionStats: () => {
+        const { selectedCharacter, level, xp, companions } = get()
+        if (selectedCharacter && companions[selectedCharacter]) {
+          set({
+            companions: {
+              ...companions,
+              [selectedCharacter]: { ...companions[selectedCharacter], level, xp },
+            },
+          })
+        }
+      },
 
       // Reset
       resetProgress: () => set({ ...initialState, isOnboarded: true, childName: get().childName, selectedCharacter: get().selectedCharacter, companionName: get().companionName, companionColor: get().companionColor, companionHat: get().companionHat }),

@@ -5,6 +5,7 @@ import { getCharacter } from '../data/characters'
 import { generateStoryPart } from '../utils/storyGen'
 import { speak, stopSpeaking, listen, isSpeechSupported } from '../utils/voice'
 import { BackArrowIcon, CloseIcon, MicIcon, CheckIcon, SparkleIcon } from '../components/SVGIcons'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 
 const themes = [
   { id: 'bravery', label: 'Being Brave', color: '#F59E0B', bg: '#FEF3C7' },
@@ -24,8 +25,25 @@ const themePrompts = {
   friendship: 'two very different animals who became best friends',
 }
 
+// Character descriptions for consistent image generation
+const CHARACTER_DESC = {
+  owl: 'purple owl with big round eyes',
+  bear: 'brown bear with rosy cheeks',
+  bunny: 'white bunny with pink floppy ears',
+  cat: 'orange tabby cat with pointed ears',
+}
+
+// Generate a Sprout Lands style illustration matching the companion
+function generateSceneIllustration(characterId, themeId, storyText) {
+  const charDesc = CHARACTER_DESC[characterId] || CHARACTER_DESC.owl
+  const scene = storyText.slice(0, 200).replace(/"/g, '')
+  const prompt = `Sprout Lands pixel art style, cute chibi ${charDesc}, ${scene}, cozy farm game aesthetic, 16x16 pixel art style, pastel colors, thick dark outlines, warm lighting, no text, children's storybook illustration`
+  const encoded = encodeURIComponent(prompt)
+  return `https://image.pollinations.ai/prompt/${encoded}?width=800&height=450&seed=${Math.floor(Math.random() * 1000)}&nologo=true`
+}
+
 export default function AIStoryScreen({ navigate }) {
-  const { selectedCharacter, childName, addXP, addBadge } = useGameStore()
+  const { selectedCharacter, childName, addXP, addBadge, addGeneratedStory } = useGameStore()
   const character = getCharacter(selectedCharacter)
 
   const [phase, setPhase] = useState('pick')
@@ -36,6 +54,7 @@ export default function AIStoryScreen({ navigate }) {
   const [question, setQuestion] = useState('')
   const [reaction, setReaction] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [storyImage, setStoryImage] = useState(null)
   const typingRef = useRef(null)
 
   const handleGenerate = async (theme) => {
@@ -54,6 +73,7 @@ export default function AIStoryScreen({ navigate }) {
       const questionPart = parts.length > 1 ? parts[parts.length - 1].trim() : ''
 
       setStoryText(story)
+      setStoryImage(generateSceneIllustration(selectedCharacter, theme.id, story))
       setPhase('reading')
       typewrite(storyPart)
 
@@ -143,7 +163,7 @@ export default function AIStoryScreen({ navigate }) {
             padding: '0.75rem 1rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
           }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}40` }}>
-              <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <AnimatedCompanion character={character} size={36} animation="idle" fps={4} />
             </div>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', fontWeight: 600, color: '#4A5568' }}>
               {character.id === 'bunny' ? `OH OH OH ${childName}! Pick a theme and I'll make up a story JUST for you!!` :
@@ -192,7 +212,7 @@ export default function AIStoryScreen({ navigate }) {
             border: `2px solid ${character.color}40`, boxShadow: `0 8px 32px ${character.color}15`,
             marginBottom: '1.5rem',
           }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <AnimatedCompanion character={character} size={80} animation="idle" fps={5} />
           </div>
         </motion.div>
         <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.2rem', fontWeight: 700, color: '#1F2937', marginBottom: '4px' }}>Creating your story...</p>
@@ -233,7 +253,32 @@ export default function AIStoryScreen({ navigate }) {
           <h2 style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1F2937', margin: '0 0 4px' }}>GREAT STORY!</h2>
           <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: '#6B7280', fontFamily: "'Nunito', sans-serif" }}>+20 XP earned!</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '300px' }}>
-            <button className="btn btn-primary" onClick={() => { setPhase('pick'); setStoryText('') }}>ANOTHER STORY</button>
+            <button className="btn btn-primary" onClick={() => {
+              const id = `ai-${Date.now()}`
+              const storyObj = {
+                id,
+                title: selectedTheme?.label || 'AI Story',
+                image: storyImage || '/assets/stories/whisperwood-intro.png',
+                description: storyText.slice(0, 100) + '...',
+                duration: '3 min',
+                ageRange: '4-8',
+                morals: [selectedTheme?.id || 'kindness'],
+                scenes: [
+                  {
+                    id: 'scene-1',
+                    image: storyImage || '/assets/stories/whisperwood-intro.png',
+                    background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+                    text: storyText,
+                    pauseAfter: true,
+                    question: question || 'What did you think about this story?',
+                    questionType: 'open',
+                  },
+                ],
+              }
+              addGeneratedStory(storyObj)
+              navigate('storyPlay', { story: storyObj })
+            }}>📖 READ AS STORYBOOK</button>
+            <button className="btn btn-glass" onClick={() => { setPhase('pick'); setStoryText('') }}>ANOTHER STORY</button>
             <button className="btn btn-glass" onClick={() => navigate('home')}>BACK HOME</button>
           </div>
         </motion.div>
@@ -256,10 +301,30 @@ export default function AIStoryScreen({ navigate }) {
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ padding: '0 1rem' }}>
+        {/* Story illustration */}
+        {storyImage && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              width: '100%', height: 180, borderRadius: 20, overflow: 'hidden',
+              marginBottom: '1rem', border: '2px solid rgba(255,255,255,0.6)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+            }}
+          >
+            <img
+              src={storyImage}
+              alt="Story scene"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'auto' }}
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+          </motion.div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '1rem' }}>
           <motion.div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `2px solid ${character.color}40` }}
             animate={phase === 'reading' ? { y: [0, -4, 0] } : {}} transition={{ duration: 0.5, repeat: Infinity }}>
-            <img src={character.image} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <AnimatedCompanion character={character} size={36} animation="idle" fps={4} />
           </motion.div>
           <div style={{
             flex: 1, backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.7)',

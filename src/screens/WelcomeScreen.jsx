@@ -1,24 +1,11 @@
 import { motion } from 'framer-motion'
-import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
-import { StarIcon, ChevronRightIcon, SparkleIcon } from '../components/SVGIcons'
-
-const guides = [
-  { id: 'owl', name: 'Owl', subtitle: 'wise storyteller', image: '/assets/characters/owl.png', gradient: 'linear-gradient(135deg, #8B5CF6, #3B82F6)', textColor: '#1E3A5F' },
-  { id: 'bear', name: 'Bear', subtitle: 'warm adventure guide', image: '/assets/characters/bear.png', gradient: 'linear-gradient(135deg, #F59E0B, #F97316)', textColor: '#7C4A1A' },
-  { id: 'bunny', name: 'Bunny', subtitle: 'playful quiz buddy', image: '/assets/characters/bunny.png', gradient: 'linear-gradient(135deg, #EC4899, #FBCFE8)', textColor: '#831843' },
-]
+import { SparkleIcon } from '../components/SVGIcons'
 
 function CastleSilhouette() {
   return (
     <svg viewBox="0 0 400 200" fill="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%', height: 'auto', opacity: 0.06 }}>
       <path d="M0 200V140h30v-20h20v20h40V100h20v40h30v-30h20v30h40V80h20v60h30v-20h20v20h40V110h20v30h30v-40h20v40h30V200H0z" fill="currentColor" />
-      <rect x="50" y="90" width="15" height="25" rx="2" fill="rgba(255,255,255,0.3)" />
-      <rect x="90" y="85" width="12" height="20" rx="2" fill="rgba(255,255,255,0.3)" />
-      <rect x="150" y="70" width="15" height="30" rx="2" fill="rgba(255,255,255,0.3)" />
-      <rect x="220" y="75" width="12" height="25" rx="2" fill="rgba(255,255,255,0.3)" />
-      <rect x="300" y="100" width="15" height="20" rx="2" fill="rgba(255,255,255,0.3)" />
-      <rect x="350" y="95" width="12" height="25" rx="2" fill="rgba(255,255,255,0.3)" />
     </svg>
   )
 }
@@ -36,166 +23,106 @@ function FloatingStar({ x, y, size, delay }) {
 }
 
 export default function WelcomeScreen({ navigate }) {
-  const isOnboarded = useGameStore(s => s.isOnboarded)
   const isLoggedIn = useAuthStore(s => s.isLoggedIn)
 
-  const handleContinue = () => {
-    if (!isLoggedIn) {
-      navigate('login')
-    } else if (isOnboarded) {
-      navigate('home')
-    } else {
-      navigate('characterSelect')
-    }
+  const handleGetStarted = () => {
+    navigate(isLoggedIn ? 'home' : 'login')
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center px-5 py-10 overflow-y-auto"
-      style={{
-        background: 'linear-gradient(180deg, #E8D5F5 0%, #F5D5C8 100%)',
-        position: 'relative',
-      }}>
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #E8D5F5 0%, #F5D5C8 50%, #FCE7F3 100%)' }}>
 
-      <CastleSilhouette />
-
-      <FloatingStar x="8%" y="12%" size={10} delay={0} />
-      <FloatingStar x="85%" y="8%" size={12} delay={0.5} />
-      <FloatingStar x="15%" y="35%" size={8} delay={1} />
-      <FloatingStar x="90%" y="30%" size={10} delay={1.5} />
-      <FloatingStar x="5%" y="55%" size={9} delay={0.8} />
-      <FloatingStar x="92%" y="50%" size={11} delay={1.2} />
+      {/* Floating stars */}
+      <FloatingStar x="10%" y="15%" size={12} delay={0} />
+      <FloatingStar x="85%" y="20%" size={8} delay={0.5} />
+      <FloatingStar x="15%" y="70%" size={10} delay={1} />
+      <FloatingStar x="80%" y="65%" size={14} delay={1.5} />
 
       {/* Logo */}
       <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="text-center relative z-10 mt-4 mb-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        style={{ textAlign: 'center', zIndex: 1, marginBottom: '1rem' }}
       >
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <h1 style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '4.2rem',
-            lineHeight: 1, margin: 0, letterSpacing: '-1px', color: '#7C3AED',
-            textShadow: '2.5px 0 #fff, -2.5px 0 #fff, 0 2.5px #fff, 0 -2.5px #fff, 2px 2px #fff, -2px -2px #fff, 2px -2px #fff, -2px 2px #fff, 0 7px 16px rgba(124,58,237,0.28)',
-          }}>
-            Moral
-          </h1>
-          <motion.div
-            style={{ position: 'absolute', top: '-8px', right: '-20px' }}
-            animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <StarIcon size={28} color="#FBBF24" />
-          </motion.div>
-        </div>
+        <h1 style={{
+          fontFamily: "'Baloo 2', cursive", fontSize: '3rem', fontWeight: 800,
+          color: '#8B5CF6', margin: 0, letterSpacing: '-0.02em',
+          textShadow: '0 2px 0 white, 0 4px 12px rgba(139,92,246,0.3)',
+        }}>
+          Moral
+        </h1>
         <p style={{
-          fontFamily: "'Nunito', sans-serif", fontSize: '0.95rem', fontWeight: 600,
-          color: '#5B4B7A', margin: '10px 0 0',
+          fontFamily: "'Nunito', sans-serif", fontSize: '1rem', color: '#4A5568',
+          margin: '0.25rem 0 0', fontWeight: 600,
         }}>
           Stories that help kids grow.
         </p>
       </motion.div>
 
-      {/* Choose your guide section */}
+      {/* Companion preview */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="relative z-10 text-center mb-4 mt-4"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        style={{ display: 'flex', gap: '12px', marginBottom: '2rem', zIndex: 1 }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <StarIcon size={12} color="#FBBF24" />
-          <span style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.1rem',
-            color: '#4A5568',
-          }}>
-            Choose your guide
-          </span>
-          <StarIcon size={12} color="#FBBF24" />
-        </div>
-      </motion.div>
-
-      {/* Character cards */}
-      <div className="flex flex-col gap-3 w-full max-w-sm relative z-10 mb-6">
-        {guides.map((guide, i) => (
-          <motion.button
-            key={guide.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + i * 0.1, type: 'spring', stiffness: 200 }}
-            onClick={() => handleContinue()}
-            whileTap={{ scale: 0.98 }}
+        {['owl', 'bear', 'bunny', 'cat'].map((id, i) => (
+          <motion.div
+            key={id}
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 2, delay: i * 0.2, repeat: Infinity, ease: 'easeInOut' }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              borderRadius: '30px',
-              border: '1px solid rgba(255,255,255,0.5)',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-              overflow: 'hidden',
-              padding: 0,
-              cursor: 'pointer',
-              textAlign: 'left',
+              width: 56, height: 56, borderRadius: 16, overflow: 'hidden',
+              background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)',
+              border: '2px solid rgba(255,255,255,0.8)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              imageRendering: 'pixelated',
             }}
           >
-            {/* Gradient section with character */}
-            <div style={{
-              width: '90px',
-              height: '90px',
-              background: guide.gradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              borderRadius: '30px 0 0 30px',
-            }}>
-              <motion.img
-                src={guide.image}
-                alt={guide.name}
-                style={{ width: '65px', height: '65px', objectFit: 'contain' }}
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
-              />
-            </div>
-
-            {/* Text section */}
-            <div style={{ flex: 1, padding: '0.75rem 0.75rem 0.75rem 1rem' }}>
-              <p style={{
-                fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem',
-                color: guide.textColor, margin: 0, lineHeight: 1.2,
-              }}>
-                {guide.name}
-              </p>
-              <p style={{
-                fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem',
-                color: '#6B7280', margin: 0,
-              }}>
-                {guide.subtitle}
-              </p>
-            </div>
-
-            {/* Arrow */}
-            <div style={{ paddingRight: '1rem', flexShrink: 0 }}>
-              <ChevronRightIcon size={20} color="#9CA3AF" />
-            </div>
-          </motion.button>
+            <img
+              src={`/assets/characters/${id}.png`}
+              alt={id}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated' }}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Footer text */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
+      {/* Get Started button */}
+      <motion.button
+        onClick={handleGetStarted}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+        whileTap={{ scale: 0.96 }}
         style={{
-          fontFamily: "'Nunito', sans-serif", fontSize: '0.75rem',
-          color: '#9CA3AF', textAlign: 'center', position: 'relative', zIndex: 10,
+          padding: '14px 48px', borderRadius: 20,
+          background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+          border: 'none', cursor: 'pointer',
+          boxShadow: '0 4px 0 #7C3AED, 0 8px 24px rgba(139,92,246,0.3)',
+          zIndex: 1,
         }}
       >
+        <span style={{
+          fontFamily: "'Baloo 2', cursive", fontSize: '1.1rem', fontWeight: 700,
+          color: 'white', letterSpacing: '0.02em',
+        }}>
+          Get Started
+        </span>
+      </motion.button>
+
+      {/* Footer */}
+      <p style={{
+        position: 'absolute', bottom: '2rem',
+        fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem',
+        color: '#9CA3AF', zIndex: 1,
+      }}>
         For kids ages 4-10. Safe and private.
-      </motion.p>
+      </p>
+
+      <CastleSilhouette />
     </div>
   )
 }

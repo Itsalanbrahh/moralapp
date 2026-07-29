@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HomeIcon, BookIcon, CompassIcon, HeartStarIcon, UserIcon } from './SVGIcons'
+import { HomeIcon, BookIcon, CompassIcon, HeartStarIcon, SproutIcon, UserIcon } from './SVGIcons'
 
 const tabs = [
   { id: 'home', label: 'Home', Icon: HomeIcon, color: '#8B5CF6' },

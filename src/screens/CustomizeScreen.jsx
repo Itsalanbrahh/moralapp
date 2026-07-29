@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
-import { CompanionAvatar } from '../components/CompanionArt'
+import AnimatedCompanion from '../components/AnimatedCompanion'
 import { ACCENT_COLORS, HATS, SUGGESTED_NAMES, companionColor } from '../data/companion'
 import { DreamyBackground } from '../components/AppArt'
 import { BackArrowIcon, StarIcon, CheckIcon, LockIcon, HeartIcon, ShieldIcon } from '../components/SVGIcons'
@@ -61,7 +61,7 @@ export default function CustomizeScreen({ navigate }) {
           <div style={{ position: 'relative', borderRadius: '24px', padding: '1.25rem 1rem 1rem', marginBottom: '1rem', overflow: 'hidden', background: `radial-gradient(circle at 50% 35%, ${accent}22, rgba(255,255,255,0.4))`, border: '1px solid rgba(255,255,255,0.7)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
-                <CompanionAvatar character={character} size={150} color={accent} hat={companionHat} />
+                <AnimatedCompanion character={character} size={150} animation="idle" fps={5} />
               </motion.div>
             </div>
             {/* pedestal */}
@@ -112,8 +112,8 @@ export default function CustomizeScreen({ navigate }) {
             })}
           </div>
 
-          {/* Hats */}
-          <SectionLabel>Hats</SectionLabel>
+          {/* Outfits */}
+          <SectionLabel>Outfits</SectionLabel>
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
             {HATS.map((h) => {
               const locked = level < h.minLevel
@@ -125,7 +125,7 @@ export default function CustomizeScreen({ navigate }) {
                     background: isActive ? 'linear-gradient(160deg,#EDE7FE,#DDD6FE)' : 'rgba(255,255,255,0.85)',
                     border: isActive ? '2px solid #8B5CF6' : '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                   <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', filter: locked ? 'grayscale(0.8) opacity(0.5)' : 'none' }}>
-                    <CompanionAvatar character={character} size={46} color={accent} hat={h.id} ring={false} />
+                    <AnimatedCompanion character={character} size={46} animation="idle" fps={3} />
                   </div>
                   <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.55rem', fontWeight: 700, color: locked ? '#9CA3AF' : '#4B5563', textAlign: 'center', margin: '2px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</p>
                   {locked && <span style={{ position: 'absolute', top: 6, right: 8, display: 'flex', alignItems: 'center', gap: 2 }}><LockIcon size={11} color="#9CA3AF" /></span>}
