@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getAllMissions } from '../data/missions'
 import { BackArrowIcon, LockIcon, CheckIcon, StarIcon, ChevronRightIcon, LeafIcon, SparkleIcon, ArmchairIcon, GearIcon, FurnitureIcon } from '../components/SVGIcons'
+import { DreamyBackground } from '../components/AppArt'
 
 const missionStyles = {
   'forest-treasure': { color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)', image: '/assets/stories/treehouse.png' },
@@ -16,9 +17,9 @@ export default function MissionScreen({ navigate }) {
   const missions = getAllMissions()
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{
-      background: 'linear-gradient(180deg,#E4F7EE 0%,#EAF6F1 45%,#F3F1FB 100%)',
-    }}>
+    <div className="w-full h-full" style={{ position: 'relative', background: '#EAF6F1' }}>
+      <DreamyBackground variant="mint" />
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <motion.button onClick={() => navigate('home')}
@@ -159,6 +160,7 @@ export default function MissionScreen({ navigate }) {
             </div>
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   )
