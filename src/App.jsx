@@ -15,6 +15,7 @@ import MissionPlayScreen from './screens/MissionPlayScreen'
 import AIStoryScreen from './screens/AIStoryScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import CustomizeScreen from './screens/CustomizeScreen'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Screens that should NOT show the bottom nav
 const noNavScreens = new Set(['welcome', 'login', 'characterSelect', 'storyPlay', 'missionPlay'])
@@ -97,7 +98,9 @@ export default function App() {
           className="relative z-10 w-full h-full"
           style={showNav ? { paddingBottom: '88px' } : undefined}
         >
-          <ScreenComponent navigate={navigate} params={screenParams} />
+          <ErrorBoundary key={currentScreen} onGoHome={() => navigate('home')}>
+            <ScreenComponent navigate={navigate} params={screenParams} />
+          </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
 

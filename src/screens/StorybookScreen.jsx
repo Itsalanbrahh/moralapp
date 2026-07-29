@@ -186,7 +186,7 @@ export default function StorybookScreen({ navigate, params }) {
   if (phase === 'quiz') {
     const q = quiz[qIdx]
     return (
-      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A' }}>
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }}>
         <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <motion.button onClick={() => navigate('story')} whileTap={{ scale: 0.9 }}
             style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
@@ -250,7 +250,7 @@ export default function StorybookScreen({ navigate, params }) {
 
   // ---------- Story (mode-specific body) ----------
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0F172A', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <motion.button onClick={() => navigate('story')} whileTap={{ scale: 0.9 }}
