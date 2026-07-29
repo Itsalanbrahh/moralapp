@@ -9,10 +9,11 @@ const SPARKLES = [
   { x: 90, y: 74, s: 9 }, { x: 50, y: 84, s: 6 }, { x: 30, y: 92, s: 8 },
 ]
 
-function Sparkle({ x, y, s, color }) {
+function Sparkle({ x, y, s, color, i }) {
   return (
-    <svg width={s} height={s} viewBox="0 0 24 24" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, opacity: 0.55 }}>
-      <path d="M12 0l2.4 7.2L22 9.6l-6.4 4.6L18 22l-6-4.2L6 22l2.4-7.8L2 9.6l7.6-2.4z" fill={color || 'rgba(251,191,36,0.85)'} />
+    <svg width={s} height={s} viewBox="0 0 24 24"
+      style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, animation: `twinkle ${2.4 + (i % 4) * 0.7}s ease-in-out ${(i % 5) * 0.5}s infinite` }}>
+      <path d="M12 0l2.4 7.2L22 9.6l-6.4 4.6L18 22l-6-4.2L6 22l2.4-7.8L2 9.6l7.6-2.4z" fill={color || 'rgba(251,191,36,0.9)'} />
     </svg>
   )
 }
@@ -25,16 +26,27 @@ const PALETTES = {
 
 // Full-bleed decorative background. Place as the first child of a position:relative
 // screen container; render the real content in a sibling with a higher z-index.
-export function DreamyBackground({ variant = 'lavender' }) {
+export function DreamyBackground({ variant = 'lavender', hills = true }) {
   const p = PALETTES[variant] || PALETTES.lavender
+  const hillTint = variant === 'mint' ? '#9BE3C0' : variant === 'night' ? '#4C3A82' : '#D9C7F5'
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: p.grad, zIndex: 0 }}>
+      {/* moon / sun glow */}
+      <div style={{ position: 'absolute', top: '-8%', left: '50%', transform: 'translateX(-50%)', width: '62%', height: '30%', borderRadius: '50%', background: p.dark ? 'radial-gradient(circle, rgba(255,255,255,0.28), transparent 68%)' : 'radial-gradient(circle, rgba(255,255,255,0.6), transparent 68%)', filter: 'blur(10px)' }} />
+      {/* colored aura blobs */}
       <div style={{ position: 'absolute', top: '-12%', left: '-15%', width: '55%', height: '35%', borderRadius: '50%', background: p.blobs[0], filter: 'blur(48px)' }} />
       <div style={{ position: 'absolute', top: '18%', right: '-18%', width: '55%', height: '32%', borderRadius: '50%', background: p.blobs[1], filter: 'blur(52px)' }} />
-      <div style={{ position: 'absolute', bottom: '-14%', left: '10%', width: '60%', height: '34%', borderRadius: '50%', background: p.blobs[2], filter: 'blur(56px)' }} />
+      <div style={{ position: 'absolute', bottom: '-6%', left: '10%', width: '60%', height: '30%', borderRadius: '50%', background: p.blobs[2], filter: 'blur(56px)' }} />
       {SPARKLES.map((sp, i) => (
-        <Sparkle key={i} {...sp} color={p.dark ? 'rgba(255,255,255,0.8)' : undefined} />
+        <Sparkle key={i} {...sp} i={i} color={p.dark ? 'rgba(255,255,255,0.85)' : undefined} />
       ))}
+      {/* soft rolling hills at the bottom for storybook depth */}
+      {hills && (
+        <svg viewBox="0 0 400 120" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, width: '100%', height: '120px' }}>
+          <path d="M0 70 Q 80 30 160 62 T 320 55 T 480 68 V120 H0 Z" fill={hillTint} opacity="0.35" />
+          <path d="M0 90 Q 100 55 210 82 T 400 80 V120 H0 Z" fill={hillTint} opacity="0.5" />
+        </svg>
+      )}
     </div>
   )
 }
@@ -107,6 +119,7 @@ export function BadgeArt({ type = 'star', size = 44 }) {
       <circle cx="32" cy="30" r="26" fill={c1} />
       <circle cx="32" cy="30" r="26" fill="none" stroke="#fff" strokeWidth="2.5" opacity="0.85" />
       <circle cx="32" cy="30" r="20" fill={c2} />
+      <ellipse cx="25" cy="19" rx="12" ry="6.5" fill="rgba(255,255,255,0.3)" />
       {emblem()}
       <path d="M20 50l4 12 8-6 8 6 4-12z" fill={c2} opacity="0.9" />
     </svg>

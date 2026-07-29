@@ -95,7 +95,7 @@ export default function App() {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
           className="relative z-10 w-full h-full"
-          style={showNav ? { paddingBottom: '60px' } : undefined}
+          style={showNav ? { paddingBottom: '88px' } : undefined}
         >
           <ScreenComponent navigate={navigate} params={screenParams} />
         </motion.div>

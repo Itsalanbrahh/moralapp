@@ -10,6 +10,7 @@ import {
 } from '../components/SVGIcons'
 import { CompanionAvatar } from '../components/CompanionArt'
 import { companionDisplayName, companionColor } from '../data/companion'
+import { DreamyBackground } from '../components/AppArt'
 
 const XP_PER_LEVEL = [0, 100, 250, 500, 800, 1200, 1800, 2500, 3500, 5000]
 
@@ -35,7 +36,9 @@ export default function ProfileScreen({ navigate }) {
 
   const currentLevelXP = XP_PER_LEVEL[level - 1] || 0
   const nextLevelXP = XP_PER_LEVEL[level] || XP_PER_LEVEL[XP_PER_LEVEL.length - 1]
-  const progress = Math.min((xp - currentLevelXP) / (nextLevelXP - currentLevelXP), 1)
+  const intoLevel = Math.max(0, xp - currentLevelXP)
+  const levelSpan = Math.max(1, nextLevelXP - currentLevelXP)
+  const progress = Math.min(intoLevel / levelSpan, 1)
 
   const handleLogout = () => {
     logout()
@@ -48,7 +51,9 @@ export default function ProfileScreen({ navigate }) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg,#F1EAFB 0%,#F6EDF8 45%,#FCEFF4 100%)' }}>
+    <div className="w-full h-full" style={{ position: 'relative', background: '#F3EEFB' }}>
+      <DreamyBackground variant="lavender" />
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <h1 style={{ fontFamily: "'Baloo 2', cursive", fontWeight: 700, fontSize: '1.2rem', color: '#1F2937', margin: 0 }}>
@@ -104,7 +109,7 @@ export default function ProfileScreen({ navigate }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <span style={{ fontFamily: "'Baloo 2', cursive", fontSize: '0.85rem', fontWeight: 700, color: '#8B5CF6' }}>Level {level}</span>
               <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.7rem', color: '#9CA3AF' }}>
-                {xp - currentLevelXP} / {nextLevelXP - currentLevelXP} XP
+                {intoLevel} / {levelSpan} XP
               </span>
             </div>
             <div style={{ height: '8px', borderRadius: '4px', overflow: 'hidden', background: 'rgba(0,0,0,0.06)' }}>
@@ -281,6 +286,7 @@ export default function ProfileScreen({ navigate }) {
           </>
         )}
       </AnimatePresence>
+      </div>
     </div>
   )
 }

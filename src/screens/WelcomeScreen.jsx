@@ -74,9 +74,9 @@ export default function WelcomeScreen({ navigate }) {
       >
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <h1 style={{
-            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '3.4rem',
+            fontFamily: "'Baloo 2', cursive", fontWeight: 800, fontSize: '3.5rem',
             lineHeight: 0.92, margin: 0, letterSpacing: '-0.5px',
-            textShadow: '0 3px 0 rgba(255,255,255,0.65), 0 8px 18px rgba(124,58,237,0.22)',
+            textShadow: '2.5px 0 #fff, -2.5px 0 #fff, 0 2.5px #fff, 0 -2.5px #fff, 2px 2px #fff, -2px -2px #fff, 2px -2px #fff, -2px 2px #fff, 0 7px 16px rgba(124,58,237,0.28)',
           }}>
             <span style={{ display: 'block', color: '#7C3AED' }}>Build</span>
             <span style={{ display: 'block', color: '#3B82F6' }}>Moral</span>

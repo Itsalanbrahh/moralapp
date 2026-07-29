@@ -105,7 +105,7 @@ export default function HomeScreen({ navigate }) {
                 flex: 1, aspectRatio: '1', borderRadius: '24px',
                 background: action.bg,
                 border: `1px solid ${action.border}`,
-                boxShadow: `0 6px 18px ${action.shadow}`,
+                boxShadow: `0 8px 20px ${action.shadow}, inset 0 2px 0 rgba(255,255,255,0.85)`,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: '4px', cursor: 'pointer', padding: '0.75rem',
               }}

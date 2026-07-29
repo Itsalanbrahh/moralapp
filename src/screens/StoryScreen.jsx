@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { getCharacter } from '../data/characters'
 import { getAllStories } from '../data/stories'
 import { BackArrowIcon, CheckIcon, SparkleIcon, ChevronRightIcon } from '../components/SVGIcons'
+import { DreamyBackground } from '../components/AppArt'
 
 export default function StoryScreen({ navigate }) {
   const { completedStories, selectedCharacter } = useGameStore()
@@ -10,7 +11,9 @@ export default function StoryScreen({ navigate }) {
   const stories = getAllStories()
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg,#F1EAFB 0%,#F6EDF8 45%,#FCEFF4 100%)' }}>
+    <div className="w-full h-full" style={{ position: 'relative', background: '#F3EEFB' }}>
+      <DreamyBackground variant="lavender" />
+      <div className="w-full h-full flex flex-col overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <motion.button
@@ -144,6 +147,7 @@ export default function StoryScreen({ navigate }) {
             )
           })}
         </div>
+      </div>
       </div>
     </div>
   )
