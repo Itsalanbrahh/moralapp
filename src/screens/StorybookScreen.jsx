@@ -36,8 +36,9 @@ function PointerCaret() {
 }
 
 export default function StorybookScreen({ navigate, params }) {
-  const { selectedCharacter, childName, completeStory, addXP, readingLevel, voiceEnabled, speechRate } = useGameStore()
+  const { selectedCharacter, childName, completeStory, addXP, readingLevel, voiceEnabled, speechRate, companionName } = useGameStore()
   const character = getCharacter(selectedCharacter)
+  const guideName = (companionName || '').trim() || character.name
   const story = getStory(params.storyId)
   const mode = READING[readingLevel] ? readingLevel : 'listen'
 
@@ -303,7 +304,7 @@ export default function StorybookScreen({ navigate, params }) {
               ))}
             </div>
             <p style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.05rem', fontWeight: 700, color: 'white', margin: 0 }}>
-              {isPlaying ? `${character.name} is telling the story…` : 'Tap play to hear this part'}
+              {isPlaying ? `${guideName} is telling the story…` : 'Tap play to hear this part'}
             </p>
             <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: '6px 0 0' }}>Listen along, then tap Next</p>
           </div>
