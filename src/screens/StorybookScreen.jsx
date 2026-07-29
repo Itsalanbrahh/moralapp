@@ -43,16 +43,6 @@ export default function StorybookScreen({ navigate, params }) {
   const story = params.story || getStory(params.storyId)
   const mode = READING[readingLevel] ? readingLevel : 'listen'
 
-  // Guard: if story not found, go back
-  if (!story) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: '#0F172A' }}>
-        <p style={{ color: 'white', fontFamily: "'Nunito', sans-serif", marginBottom: '1rem' }}>Story not found</p>
-        <button onClick={() => navigate('story')} style={{ padding: '10px 24px', borderRadius: 12, background: '#8B5CF6', color: 'white', border: 'none', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>Back to Stories</button>
-      </div>
-    )
-  }
-
   const [sceneIndex, setSceneIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [modelIdx, setModelIdx] = useState(-1)   // word being modeled while "Hear it" plays
@@ -76,6 +66,16 @@ export default function StorybookScreen({ navigate, params }) {
   const wordCount = useMemo(() => tokens.filter((t) => t.isWord).length, [tokens])
   const quiz = story?.comprehension || []
   const targetWord = useMemo(() => tokens.find((t) => t.isWord && t.order === readIdx)?.text || '', [tokens, readIdx])
+
+  // Guard: if story not found, go back (AFTER all hooks)
+  if (!story) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: '#0F172A' }}>
+        <p style={{ color: 'white', fontFamily: "'Nunito', sans-serif", marginBottom: '1rem' }}>Story not found</p>
+        <button onClick={() => navigate('story')} style={{ padding: '10px 24px', borderRadius: 12, background: '#8B5CF6', color: 'white', border: 'none', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>Back to Stories</button>
+      </div>
+    )
+  }
 
   const effRate = mode === 'advanced' ? speechRate : Math.min(speechRate, 0.9)
 
